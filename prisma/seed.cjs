@@ -1,5 +1,6 @@
 // Original, non-transactional demo records. Safe to rerun: existing products are not overwritten.
-import { PrismaClient } from '@prisma/client';
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- Node CommonJS seed entrypoint.
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const categories = [
