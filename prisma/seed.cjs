@@ -1,5 +1,5 @@
 // Original, non-transactional demo records. Safe to rerun: existing products are not overwritten.
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const categories = [
