@@ -3,16 +3,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FashionPlaceholder } from "@/components/fashion-placeholder";
 import { CatalogCard } from "@/components/catalog-card";
-import { formatPrice, getCategory, getProduct, products } from "@/lib/catalog";
+import { formatPrice, getCategory } from "@/lib/catalog";
+import { getPreviewProducts } from "@/lib/catalog-reader";
 
+export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }> };
-export function generateStaticParams() { return products.map(({ slug }) => ({ slug })); }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = getProduct((await params).slug);
+  const products = await getPreviewProducts();
+  const product = products.find(item => item.slug === (await params).slug);
   return { title: product?.name ?? "Product", description: product?.description };
 }
 export default async function ProductPage({ params }: Props) {
-  const product = getProduct((await params).slug);
+  const products = await getPreviewProducts();
+  const product = products.find(item => item.slug === (await params).slug);
   if (!product) notFound();
   const category = getCategory(product.category);
   const related = products.filter(item => item.category === product.category && item.slug !== product.slug).slice(0,4);
