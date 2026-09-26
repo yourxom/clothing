@@ -9,13 +9,15 @@ import { getPreviewProducts } from "@/lib/catalog-reader";
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
   const products = await getPreviewProducts();
-  const product = products.find(item => item.slug === (await params).slug);
+  const product = products.find(item => item.slug === slug);
   return { title: product?.name ?? "Product", description: product?.description };
 }
 export default async function ProductPage({ params }: Props) {
+  const { slug } = await params;
   const products = await getPreviewProducts();
-  const product = products.find(item => item.slug === (await params).slug);
+  const product = products.find(item => item.slug === slug);
   if (!product) notFound();
   const category = getCategory(product.category);
   const related = products.filter(item => item.category === product.category && item.slug !== product.slug).slice(0,4);
