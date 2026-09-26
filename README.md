@@ -1,8 +1,8 @@
 # AURELIA
 
-An original, editorial Indian women's fashion storefront. This branch contains the responsive homepage and a **Phase 2 catalogue preview** with 54 demo concepts, nine category routes, and product-detail routes. The storefront still reads `lib/catalog.ts`, so it works without MySQL; Phase 2 is not complete until its pages use verified database records.
+An original, editorial Indian women's fashion storefront. The Phase 2 preview has 54 demo concepts, nine category routes and product-detail routes. Storefront pages now read **unpublished** demo products from the MySQL catalogue at request time when configured; otherwise they use the bundled `lib/catalog.ts` preview. An available database with zero unpublished records shows an empty preview rather than silently filling it with bundled products.
 
-Artwork is an illustrative CSS placeholder; demo prices, materials and sizes are unverified and may change. Products are not purchasable. Do not use this branch to accept real orders.
+Artwork is an illustrative CSS placeholder; demo prices, materials and sizes are unverified and may change. Products are not purchasable. Do not use this branch to accept real orders. Published products are intentionally excluded from this preview and require a separately designed, verified commerce flow.
 
 ## Run and check the preview
 
@@ -10,42 +10,41 @@ Use Node.js >=20.9. Checkout `feature/aurelia-phase-1`, then:
 
 ```bash
 npm install
+npm run db:generate
+npm test
 npm run lint
 npm run typecheck
 npm run build
 npm run dev
 ```
 
-Open http://localhost:3000 and try `/shop`, `/collections/kurtas` and a product link. If the old local `aurelia-ui-patch.cjs` is still inside the repository, move it outside the project before linting; it is not needed.
+Open http://localhost:3000 and try `/shop`, `/collections/kurtas` and a product link. The homepage, shop, collection and product pages are rendered at request time to avoid baking local database records into the build. With `DATABASE_URL` configured and a reachable MySQL instance, the demo preview uses MySQL; with no URL or a connection failure it uses the bundled demo. Other DB errors (such as authentication or migration problems) are surfaced so they can be fixed. This fallback is for previews only, not a production commerce availability strategy. If the old local `aurelia-ui-patch.cjs` is still inside the repository, move it outside the project before linting; it is not needed.
 
-## MySQL catalogue foundation (optional until pages are migrated)
+## MySQL catalogue foundation
 
-Use a **new, empty local development MySQL database** dedicated to AURELIA, not a database with important data. Start your MySQL service. In MySQL Workbench, create a schema named `aurelia_dev` (or use a different name and reflect it in the URL). Create a development user with permissions for that schema. Prisma `migrate dev` also uses a temporary shadow database, so the development account needs permission to create and drop databases; if it lacks that permission, stop and use a separately configured shadow database rather than granting broad privileges to an application/production user.
+Use a **new, empty local development MySQL database** dedicated to AURELIA, not a database with important data. Start your MySQL service. In the MySQL monitor, create a schema named `aurelia_dev` (or use a different name and reflect it in the URL). A development account needs access to that schema. Prisma `migrate dev` also uses a temporary shadow database, so a development account requires permission to create and drop databases or an explicitly configured shadow database; don't grant broad privileges to an application/production user.
 
-In Windows CMD, from the project folder, run `copy .env.example .env` and edit the **untracked** root `.env` so `DATABASE_URL` contains your real local MySQL user, password, host, port and database name. For example, `mysql://USER:URL_ENCODED_PASSWORD@127.0.0.1:3306/aurelia_dev`. Percent-encode special characters in the password. Never share or commit your password or `.env` file. The URL is server-side only, not a `NEXT_PUBLIC_` variable.
+In Windows CMD, from the project folder, run `if not exist .env copy .env.example .env` and edit the **untracked** root `.env` so `DATABASE_URL` contains your real local MySQL user, password, host, port and database name. For example, `mysql://USER:URL_ENCODED_PASSWORD@127.0.0.1:3306/aurelia_dev`. Percent-encode special characters in the password. Never share or commit your password or `.env` file. The URL is server-side only, not a `NEXT_PUBLIC_` variable.
 
-First validate the schema and generate the client:
+For a new database, validate, generate, and only after confirming it targets an empty local development database, apply the tracked migration and seed:
 
 ```bash
 npm run db:validate
 npm run db:generate
-```
-
-Only after confirming the URL targets your **empty local development database**, run:
-
-```bash
-npm run db:migrate -- --name init_catalog_mysql
+npm run db:migrate
 npm run db:seed
 ```
 
-`db:migrate` and `db:seed` require a running, reachable MySQL instance. The schema models category, product, image, variant and inventory records only; other requested commerce models arrive alongside their feature phases. The seed is rerunnable, inserts nine categories and 54 **unpublished** original concept products with size variants, and does not overwrite existing products. No product photos or stock are created. Currency amounts are stored as integer paise. Review and commit the generated migration before deploying elsewhere. Never run `migrate dev` against production; do not accept a database reset prompt if it refers to data you need to keep.
+**If your development database already has the initial migration and seed, do not rerun them just to check out these changes.** Use `npm run db:generate` and the read/test/build commands above. The schema models category, product, image, variant and inventory records only; other commerce models arrive alongside their feature phases. The seed is rerunnable, inserts nine categories and 54 **unpublished** original concept products with size variants, and does not overwrite existing products. No product photos or stock are created. Currency amounts are stored as integer paise, converted to rupees only for the preview display. Never run `migrate dev` against production; do not accept a database reset prompt if it refers to data you need to keep.
 
 ## Structure and status
 
-- `app/` — Next.js App Router pages and styles
+- `app/` — request-time Next.js App Router pages and styles
 - `components/` — header, footer, announcement bar, product cards and fashion placeholders
-- `lib/catalog.ts` — current preview data; will be replaced with repository reads after DB validation
-- `prisma/schema.prisma` and `prisma/seed.cjs` — MySQL catalogue foundation and safe demo seed
+- `lib/catalog.ts` — bundled fallback preview data and stable display types
+- `lib/catalog-reader.ts` — server-side MySQL unpublished concept reads and connection-only fallback
+- `lib/catalog-reader.test.cjs` — mapping, empty-result and fallback tests; does not need MySQL
+- `prisma/schema.prisma`, `prisma/migrations/` and `prisma/seed.cjs` — MySQL catalogue foundation
 - `public/` — original SVG favicon
 
 Search, filtering, sorting, wishlist and cart follow in Phase 3; authentication, checkout and orders in Phase 4. Admin, image uploads, AI jobs, CMS, SEO and broader testing are later phases. All brand copy, design and artwork are original AURELIA concepts and the project is not affiliated with any reference website.
