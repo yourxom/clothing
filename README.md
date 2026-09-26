@@ -1,6 +1,6 @@
 # AURELIA
 
-An original, editorial Indian women's fashion storefront. This branch contains **Phase 1 only**: Next.js setup, responsive design system, navigation, footer, and a preview homepage. It does not yet offer purchases, customer accounts, a product catalogue, checkout, or working email subscription. Visuals are intentional CSS placeholders; no third-party photographs are used.
+An original, editorial Indian women's fashion storefront. The current feature branch contains the responsive Phase 1 homepage plus an **early Phase 2 catalogue preview**: 54 generated original demo concepts, nine working category pages and product detail routes. This is not a transactional store. Product artwork is an illustrative CSS placeholder; demo prices, materials and sizes are unverified and may change.
 
 ## Run locally
 
@@ -11,12 +11,19 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. Validate with `npm run lint`, `npm run typecheck`, and `npm run build`.
+Open http://localhost:3000. Explore `/shop`, `/collections/kurtas` and product links. Validate with:
 
-## Structure
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
 
-- `app/` — App Router, home page, metadata and global styles
-- `components/` — header, footer, announcement bar and fashion placeholders
+## Current structure
+
+- `app/` — App Router, homepage, collection and product routes, responsive styles
+- `components/` — header, footer, announcement bar, product cards and fashion placeholders
+- `lib/catalog.ts` — temporary typed demo data; replace with a PostgreSQL/Prisma repository in Phase 2
 - `public/` — original SVG favicon
 
-No environment variables or database are needed for Phase 1. See `.env.example`. PostgreSQL/Prisma and real product catalogue follow in Phase 2; cart/search follow in Phase 3; authentication/checkout in Phase 4; admin, storage, AI jobs, CMS, SEO, and testing in subsequent phases. Do not use this phase to accept real orders. All brand copy, design elements, and artwork are original AURELIA concepts; this project is not affiliated with any reference website.
+No environment variables or database are required **for this preview**. See `.env.example`. PostgreSQL/Prisma and seeded product records are still pending. Search, filtering, sorting, wishlist and cart follow in Phase 3; authentication, checkout and orders in Phase 4. Admin, image uploads, AI jobs, CMS, SEO and testing are subsequent phases. Do not use this branch to accept real orders. All brand copy, design elements and artwork are original AURELIA concepts; this project is not affiliated with any reference website.
