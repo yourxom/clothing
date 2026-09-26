@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { FashionPlaceholder } from "@/components/fashion-placeholder";
 import { CatalogCard } from "@/components/catalog-card";
-import { products } from "@/lib/catalog";
+import { getPreviewProducts } from "@/lib/catalog-reader";
 
+export const dynamic = "force-dynamic";
 const categories = [
   { name: "Kurtas", slug: "kurtas", tone: "rose" },
   { name: "Kurta Sets", slug: "kurta-sets", tone: "olive" },
@@ -15,9 +16,10 @@ const occasions = [
   { name: "Workwear", tone: "blue" }, { name: "Festive", tone: "clay" },
   { name: "Wedding", tone: "plum" }, { name: "Casual", tone: "olive" },
 ] as const;
-const featured = [products[0], products[7], products[20], products[31]];
 
-export default function Home() {
+export default async function Home() {
+  const products = await getPreviewProducts();
+  const featured = [0, 7, 20, 31].map(index => products[index]).filter((product): product is (typeof products)[number] => Boolean(product));
   return <main id="main-content">
     <section className="hero" aria-labelledby="hero-title">
       <div className="hero-content">
@@ -34,7 +36,7 @@ export default function Home() {
       <div className="section-heading"><div><span className="eyebrow">01 / Browse by silhouette</span><h2 id="categories-title" className="serif">Find your own way to dress.</h2></div><Link className="text-link" href="/shop">See the full edit ↗</Link></div>
       <div className="category-grid">{categories.map((category, index) => <Link href={`/collections/${category.slug}`} className="category-card" key={category.slug}><FashionPlaceholder label={`${category.name} category`} tone={category.tone} /><div className="category-meta"><span>0{index + 1}</span><h3>{category.name}</h3><span aria-hidden="true">↗</span></div></Link>)}</div>
     </section>
-    <section id="new-arrivals" className="section container" aria-labelledby="edit-title"><div className="section-heading"><div><span className="eyebrow">02 / The first edit · Demo</span><h2 id="edit-title" className="serif">A closer look.</h2></div><Link className="text-link" href="/shop">Explore all concepts ↗</Link></div><div className="catalog-grid">{featured.map(product => <CatalogCard key={product.slug} product={product} />)}</div><p className="collection-disclaimer">Illustrative artwork and indicative pricing. These pieces are not available to purchase.</p></section>
+    <section id="new-arrivals" className="section container" aria-labelledby="edit-title"><div className="section-heading"><div><span className="eyebrow">02 / The first edit · Demo</span><h2 id="edit-title" className="serif">A closer look.</h2></div><Link className="text-link" href="/shop">Explore all concepts ↗</Link></div>{featured.length ? <div className="catalog-grid">{featured.map(product => <CatalogCard key={product.slug} product={product} />)}</div> : <p className="notice">Preview concepts are being prepared.</p>}<p className="collection-disclaimer">Illustrative artwork and indicative pricing. These pieces are not available to purchase.</p></section>
     <section id="occasions" className="section container section--tinted" aria-labelledby="occasions-title"><div className="section-heading"><div><span className="eyebrow">03 / The mood</span><h2 id="occasions-title" className="serif">For every kind of day.</h2></div></div><div className="occasion-grid">{occasions.map((item, index) => <div className="occasion-card" key={item.name}><FashionPlaceholder label={`${item.name} mood concept`} tone={item.tone} /><div className="occasion-meta"><span className="eyebrow">0{index + 1} / Moodboard</span><h3>{item.name}</h3></div></div>)}</div></section>
     <section id="best-sellers" className="section container" aria-labelledby="favourites-title"><div className="section-heading"><div><span className="eyebrow">A first look</span><h2 id="favourites-title" className="serif">Future favourites.</h2></div></div><p className="notice">Sales rankings will appear after verified orders. The current catalogue is a preview; purchases are not yet available.</p></section>
     <section id="editorial" className="editorial" aria-labelledby="story-title"><FashionPlaceholder label="AURELIA brand story concept" tone="sand" artwork="fold" /><div className="editorial-copy"><span className="eyebrow">04 / Our point of view</span><h2 id="story-title" className="serif">Tradition, with room to move.</h2><p>Inspired by the changing rhythms of everyday life, AURELIA imagines a fresh perspective on Indian occasionwear and the pieces you reach for in between.</p><a className="text-link" href="#journal">Read our style notes ↗</a></div></section>
