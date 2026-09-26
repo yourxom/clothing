@@ -14,7 +14,7 @@ body { font-family:Arial,Helvetica,sans-serif; -webkit-font-smoothing:antialiase
 .visual--rose { background-image:radial-gradient(ellipse at 20% 10%,#fff9,transparent 43%),repeating-linear-gradient(125deg,#ffffff18 0 1px,transparent 1px 8px),linear-gradient(140deg,#ead4cd,#ad7973) }
 .visual--olive { background-image:radial-gradient(ellipse at 20% 10%,#fff9,transparent 43%),repeating-linear-gradient(125deg,#ffffff18 0 1px,transparent 1px 8px),linear-gradient(140deg,#ddd9c0,#828b6d) }
 .visual--blue { background-image:radial-gradient(ellipse at 20% 10%,#fff9,transparent 43%),repeating-linear-gradient(125deg,#ffffff18 0 1px,transparent 1px 8px),linear-gradient(140deg,#d5dfe0,#7e94a0) }
-.visual--clay { background-image:radial-gradient(ellipse at 20% 10%,#fff9,transparent 43%),repeating-linear-gradient(125deg,#ffffff18 0 1px,transparent 1px 8px),linear-gradient(140deg,#edd1bb,#ad735d) }
+.visual--clay { background-image:radial-gradient(ellipse at 20% 10%,#fff9,transparent 43%),repeating-linear-gradient(125deg,#ffffff18 0 1px,transparent 8px),linear-gradient(140deg,#edd1bb,#ad735d) }
 .visual--sand { background-image:radial-gradient(ellipse at 20% 10%,#fff9,transparent 43%),repeating-linear-gradient(125deg,#ffffff18 0 1px,transparent 1px 8px),linear-gradient(140deg,#f0dfc4,#b19a77) }
 .visual--plum { background-image:radial-gradient(ellipse at 20% 10%,#fff9,transparent 43%),repeating-linear-gradient(125deg,#ffffff18 0 1px,transparent 1px 8px),linear-gradient(140deg,#e2d1d4,#907380) }
 .visual:before { inset:6%;border:1px solid #fff7;z-index:2;pointer-events:none }
@@ -61,3 +61,27 @@ section[id] { scroll-margin-top:115px }
 @media(max-width:760px) { .container { width:min(100% - 2rem,1370px) }.section { padding-block:4rem }.section-heading h2 { font-size:clamp(2.35rem,8vw,3.4rem) }.section-heading { margin-bottom:1.6rem }.hero { display:flex;flex-direction:column;min-height:0 }.hero .visual { order:1;min-height:420px }.hero .visual:after { left:26%;top:3%;height:94%;width:48% }.hero-content { order:2;padding:2.8rem 1.5rem 3.5rem }.hero h1 { font-size:clamp(4rem,13vw,6rem) }.hero p { font-size:.98rem }.category-grid { gap:.7rem }.category-card h3 { font-size:1.13rem }.product-grid { gap:.85rem }.product-card h3 { font-size:1.15rem }.occasion-grid { gap:.8rem }.editorial { min-height:0 }.editorial .visual { min-height:340px }.editorial-copy { padding:2.4rem 1.5rem 3rem }.editorial h2 { font-size:clamp(2.6rem,11vw,4rem) }.footer-grid { gap:1.5rem }.brand { font-size:1.45rem }.nav-actions { gap:.15rem } }
 @media(max-width:430px) { .category-grid { grid-template-columns:repeat(2,minmax(0,1fr)) }.hero .visual { min-height:340px }.brand { letter-spacing:.11em;font-size:1.3rem }.nav-actions .icon-btn { padding:.3rem }.nav-actions svg { width:18px;height:18px }.footer-grid { grid-template-columns:1fr 1fr }.footer-grid>div:first-child { grid-column:1/-1 } }
 @media(prefers-reduced-motion:reduce) { .button,.category-card h3,.visual { transition:none } }
+
+/* Motion enhancement: content stays visible without animation support. */
+@keyframes aurelia-rise { from { opacity:0;transform:translateY(18px) } to { opacity:1;transform:translateY(0) } }
+@keyframes aurelia-art { from { opacity:.6;transform:translateY(12px) rotate(-5deg) } to { opacity:.82;transform:translateY(0) rotate(-3deg) } }
+@media (prefers-reduced-motion:no-preference) {
+  .hero-content > * { animation:aurelia-rise .72s both;animation-timing-function:cubic-bezier(.2,.7,.25,1) }
+  .hero-content > :nth-child(2) { animation-delay:.1s }
+  .hero-content > :nth-child(3) { animation-delay:.2s }
+  .hero-content > :nth-child(4) { animation-delay:.3s }
+  .hero .visual:after { animation:aurelia-art 1.15s both ease-out }
+  .category-card .visual:after,.product-card .visual:after,.occasion-card .visual:after { transition:transform .5s cubic-bezier(.2,.7,.25,1) }
+  .category-card:hover .visual:after,.category-card:focus-visible .visual:after,.product-card:hover .visual:after,.occasion-card:hover .visual:after { transform:translateY(-6px) rotate(-1deg) scale(1.035) }
+  .category-card,.product-card,.occasion-card { transition:transform .3s ease }
+  .category-card:hover,.category-card:focus-visible,.product-card:hover,.occasion-card:hover { transform:translateY(-4px) }
+  .mini-card { transition:border-color .3s ease,transform .3s ease }
+  .mini-card:hover { border-color:var(--accent);transform:translateY(-3px) }
+  @supports (animation-timeline:view()) {
+    .section-heading,.category-card,.product-card,.occasion-card,.mini-card {
+      animation:aurelia-rise linear both;
+      animation-timeline:view();
+      animation-range:entry 0% entry 85%;
+    }
+  }
+}
