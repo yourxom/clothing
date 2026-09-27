@@ -46,3 +46,26 @@ export function setBagQuantity(state: PreviewList, slug: string, size: string, q
   if (!state.bag.some(item => item.slug === slug && item.size === size)) return state;
   return { ...state, bag: state.bag.filter(item => item.slug !== slug || item.size !== size || quantity > 0).map(item => item.slug === slug && item.size === size ? { ...item, quantity: cap(quantity) } : item) };
 }
+
+// Stored under a different key so existing version-1 bag and wishlist data remain intact.
+export function parseComparison(raw: string | null): string[] {
+  if (!raw || raw.length > 30000) return [];
+  try {
+    const data: unknown = JSON.parse(raw);
+    if (!data || typeof data !== 'object' || !('version' in data) || data.version !== 1 || !('slugs' in data) || !Array.isArray(data.slugs)) return [];
+    const slugs: string[] = [];
+    for (const slug of data.slugs.slice(0, 100)) {
+      if (validSlug(slug) && !slugs.includes(slug)) slugs.push(slug);
+      if (slugs.length === 3) break;
+    }
+    return slugs;
+  } catch { return []; }
+}
+export function serializeComparison(slugs: readonly string[]): string {
+  return JSON.stringify({ version: 1, slugs: parseComparison(JSON.stringify({ version: 1, slugs })) });
+}
+export function toggleComparison(slugs: readonly string[], slug: string): string[] {
+  if (!validSlug(slug)) return [...slugs];
+  if (slugs.includes(slug)) return slugs.filter(entry => entry !== slug);
+  return slugs.length < 3 ? [...slugs, slug] : [...slugs];
+}
