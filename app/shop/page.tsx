@@ -7,7 +7,7 @@ import { filterPreviewProducts } from "@/lib/catalog-filters";
 import { getPreviewProducts } from "@/lib/catalog-reader";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Shop the edit", description: "Browse original AURELIA demo fashion concepts. Products are not available for purchase yet." };
-type ShopParams = { q?: string | string[]; category?: string | string[]; size?: string | string[]; sort?: string | string[] };
+type ShopParams = { q?: string | string[]; category?: string | string[]; size?: string | string[]; sort?: string | string[]; color?: string | string[] };
 type Props = { searchParams: Promise<ShopParams> };
 const first = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
 export default async function ShopPage({ searchParams }: Props) {
@@ -17,15 +17,18 @@ export default async function ShopPage({ searchParams }: Props) {
   const category = first(params.category);
   const size = first(params.size);
   const sort = first(params.sort);
+  const color = first(params.color);
   const sizes = Array.from(new Set(products.flatMap(product => product.sizes))).sort((a, b) => {
     const order = ["XS", "S", "M", "L", "XL", "XXL"];
     const ai = order.indexOf(a), bi = order.indexOf(b);
     return (ai < 0 ? order.length : ai) - (bi < 0 ? order.length : bi) || a.localeCompare(b);
   });
+  const colors = Array.from(new Set(products.map(product => product.color))).sort((a, b) => a.localeCompare(b));
   const selectedCategory = categories.some(item => item.slug === category) ? category : "";
   const selectedSize = sizes.includes(size) ? size : "";
   const selectedSort = ["price-asc", "price-desc", "name"].includes(sort) ? sort : "";
-  const visible = filterPreviewProducts(products, { query, category: selectedCategory, size: selectedSize, sort: selectedSort });
+  const selectedColor = colors.includes(color) ? color : "";
+  const visible = filterPreviewProducts(products, { query, category: selectedCategory, size: selectedSize, sort: selectedSort, color: selectedColor });
   return <main id="main-content" className="container shop-page">
     <div className="shop-intro"><span className="eyebrow">The AURELIA edit / Preview</span><h1 className="serif">A wardrobe for every moment.</h1><p>Explore original fashion concepts while our complete shopping experience is being built. Images, prices and specifications are placeholders; checkout is not yet available.</p></div>
     <nav className="catalog-category-nav" aria-label="Shop by category">{categories.map(item => <Link key={item.slug} href={`/collections/${item.slug}`}>{item.name} <span aria-hidden="true">↗</span></Link>)}</nav>
@@ -34,8 +37,9 @@ export default async function ShopPage({ searchParams }: Props) {
       <div className="catalog-filter-field catalog-filter-search"><label htmlFor="catalog-query">Search styles</label><input id="catalog-query" name="q" type="search" maxLength={100} defaultValue={query} placeholder="Name, colour or fabric" /></div>
       <div className="catalog-filter-field"><label htmlFor="catalog-category">Category</label><select id="catalog-category" name="category" defaultValue={selectedCategory}><option value="">All categories</option>{categories.map(item => <option key={item.slug} value={item.slug}>{item.name}</option>)}</select></div>
       <div className="catalog-filter-field"><label htmlFor="catalog-size">Proposed size</label><select id="catalog-size" name="size" defaultValue={selectedSize}><option value="">All sizes</option>{sizes.map(item => <option key={item} value={item}>{item}</option>)}</select></div>
+      <div className="catalog-filter-field"><label htmlFor="catalog-color">Colour</label><select id="catalog-color" name="color" defaultValue={selectedColor}><option value="">All colours</option>{colors.map(item => <option key={item} value={item}>{item}</option>)}</select></div>
       <div className="catalog-filter-field"><label htmlFor="catalog-sort">Sort by</label><select id="catalog-sort" name="sort" defaultValue={selectedSort}><option value="">Catalogue order</option><option value="price-asc">Indicative price: low to high</option><option value="price-desc">Indicative price: high to low</option><option value="name">Name A–Z</option></select></div>
-      <div className="catalog-filter-actions"><button type="submit">Apply filters</button><Link href="/shop">Clear</Link></div>
+      <div className="catalog-filter-actions"><button type="submit">Apply filters</button><Link href="/shop">Clear</Link><Link href="/search">Instant search suggestions</Link></div>
     </form>
     <p className="catalog-result-count" role="status">Showing {visible.length} of {products.length} demo styles</p>
     <ComparisonNotice />
