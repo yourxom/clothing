@@ -42,6 +42,7 @@ export function addToBag(state: PreviewList, slug: string, size: string): Previe
   return { ...state, bag: existing ? state.bag.map(item => item === existing ? { ...item, quantity: cap(item.quantity + 1) } : item) : [...state.bag, { slug, size, quantity: 1 }] };
 }
 export function setBagQuantity(state: PreviewList, slug: string, size: string, quantity: number): PreviewList {
-  if (!validSlug(slug) || !validSize(size) || !Number.isSafeInteger(quantity)) return state;
+  if (!validSlug(slug) || !validSize(size) || !Number.isSafeInteger(quantity) || quantity < 0) return state;
+  if (!state.bag.some(item => item.slug === slug && item.size === size)) return state;
   return { ...state, bag: state.bag.filter(item => item.slug !== slug || item.size !== size || quantity > 0).map(item => item.slug === slug && item.size === size ? { ...item, quantity: cap(quantity) } : item) };
 }
