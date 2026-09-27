@@ -1,0 +1,4 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+export const metadata: Metadata = { title: "Shipping and returns", description: "Current shipping and returns status of the AURELIA preview." };
+export default function ShippingPage() { return <main id="main-content" className="container shop-page content-page"><span className="eyebrow">Pre-launch information</span><h1 className="serif">Shipping and returns</h1><p className="notice">Shipping and returns are not available: this site does not accept orders. No delivery dates, service areas, rates or return windows have been verified.</p><p>Before purchases are enabled, we will publish approved delivery coverage, charges, estimated times, return eligibility, instructions and a verified support contact. An indicative demo bag total does not include shipping or tax and is not a quote.</p><Link className="text-link" href="/help">More preview questions ↗</Link></main>; }
