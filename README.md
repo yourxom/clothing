@@ -1,6 +1,6 @@
 # AURELIA
 
-An original, editorial Indian women's fashion storefront. The Phase 2 preview has 54 demo concepts, nine category routes and product-detail routes. Storefront pages now read **unpublished** demo products from the MySQL catalogue at request time when configured; otherwise they use the bundled `lib/catalog.ts` preview. An available database with zero unpublished records shows an empty preview rather than silently filling it with bundled products.
+An original, editorial Indian women's fashion storefront. The preview has 54 demo concepts, nine category routes, and product-detail routes. Storefront pages read **unpublished** demo products from the MySQL catalogue at request time when configured; otherwise they use the bundled `lib/catalog.ts` preview. An available database with zero unpublished records shows an empty preview rather than silently filling it with bundled products.
 
 Artwork is an illustrative CSS placeholder; demo prices, materials and sizes are unverified and may change. Products are not purchasable. Do not use this branch to accept real orders. Published products are intentionally excluded from this preview and require a separately designed, verified commerce flow.
 
@@ -18,7 +18,11 @@ npm run build
 npm run dev
 ```
 
-Open http://localhost:3000 and try `/shop`, `/collections/kurtas` and a product link. The homepage, shop, collection and product pages are rendered at request time to avoid baking local database records into the build. With `DATABASE_URL` configured and a reachable MySQL instance, the demo preview uses MySQL; with no URL or a connection failure it uses the bundled demo. Other DB errors (such as authentication or migration problems) are surfaced so they can be fixed. This fallback is for previews only, not a production commerce availability strategy. If the old local `aurelia-ui-patch.cjs` is still inside the repository, move it outside the project before linting; it is not needed.
+Open http://localhost:3000 and try `/shop`, `/collections/kurtas` and a product link. The homepage, shop, collection, product, saved styles and demo bag pages are rendered at request time to avoid baking local database records into the build. With `DATABASE_URL` configured and a reachable MySQL instance, the demo preview uses MySQL; with no URL or a connection failure it uses the bundled demo. Other DB errors (such as authentication or migration problems) are surfaced so they can be fixed. This fallback is for previews only, not a production commerce availability strategy. If the old local `aurelia-ui-patch.cjs` is still inside the repository, move it outside the project before linting; it is not needed.
+
+## Preview discovery and planning lists
+
+`/shop` shows all demo styles with search, category/size filters and sorting. Save ideas from product cards or detail pages, then open `/wishlist`. Select a proposed size on a product page to add that style to `/bag`; adjust the demo quantity (maximum 10 per style/size) or remove it. Both lists are held only in browser localStorage, capped at 100 entries per list and not synced to an account. Storage may be blocked or cleared; then lists can disappear. A style no longer present in the unpublished catalogue is not displayed as an available product. No stock is reserved. The bag's indicative total is not a price quote. There is **no checkout, payment, customer account, order or delivery estimate**; no personal information is collected by these list features. Verify products, prices, inventory and the commerce flow separately before any real sale.
 
 ## MySQL catalogue foundation
 
@@ -40,11 +44,12 @@ npm run db:seed
 ## Structure and status
 
 - `app/` — request-time Next.js App Router pages and styles
-- `components/` — header, footer, announcement bar, product cards and fashion placeholders
+- `components/` — header, footer, announcement bar, product cards, fashion placeholders and browser-only preview lists
 - `lib/catalog.ts` — bundled fallback preview data and stable display types
 - `lib/catalog-reader.ts` — server-side MySQL unpublished concept reads and connection-only fallback
 - `lib/catalog-reader.test.cjs` — mapping, empty-result and fallback tests; does not need MySQL
+- `lib/preview-list.ts` and `lib/preview-list.test.cjs` — bounded wishlist and demo bag state and validation
 - `prisma/schema.prisma`, `prisma/migrations/` and `prisma/seed.cjs` — MySQL catalogue foundation
 - `public/` — original SVG favicon
 
-Search, filtering, sorting, wishlist and cart follow in Phase 3; authentication, checkout and orders in Phase 4. Admin, image uploads, AI jobs, CMS, SEO and broader testing are later phases. All brand copy, design and artwork are original AURELIA concepts and the project is not affiliated with any reference website.
+Authentication, checkout and orders require verified merchandise and dedicated implementation. Admin, image uploads, AI jobs, CMS, SEO and broader testing are later phases. All brand copy, design and artwork are original AURELIA concepts and the project is not affiliated with any reference website.
