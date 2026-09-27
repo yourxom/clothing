@@ -20,7 +20,7 @@ export function parsePreviewList(raw: string | null): PreviewList {
     if ('bag' in data && Array.isArray(data.bag)) for (const item of data.bag.slice(0, 200)) {
       if (typeof item !== 'object' || item === null || !('slug' in item) || !('size' in item) || !('quantity' in item)) continue;
       const { slug, size, quantity } = item;
-      if (!validSlug(slug) || !validSize(size) || !Number.isSafeInteger(quantity) || quantity < 1) continue;
+      if (!validSlug(slug) || !validSize(size) || typeof quantity !== 'number' || !Number.isSafeInteger(quantity) || quantity < 1) continue;
       const existing = bag.find(entry => entry.slug === slug && entry.size === size);
       if (existing) existing.quantity = cap(existing.quantity + quantity);
       else if (bag.length < 100) bag.push({ slug, size, quantity: cap(quantity) });
