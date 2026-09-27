@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound() { return <main id="main-content" className="container shop-page content-page"><span className="eyebrow">404 / Page not found</span><h1 className="serif">We couldn’t find that page.</h1><p className="content-lead">The page may have moved, or this demo style may no longer be part of the edit.</p><Link className="button" href="/shop">Explore the preview catalogue</Link><p><Link className="text-link" href="/">Return home ↗</Link></p></main>; }
