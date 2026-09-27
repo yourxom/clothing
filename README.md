@@ -1,12 +1,12 @@
 # AURELIA
 
-An original, editorial Indian women's fashion storefront. The preview has 54 demo concepts, nine category routes, and product-detail routes. Storefront pages read **unpublished** demo products from the MySQL catalogue at request time when configured; otherwise they use the bundled `lib/catalog.ts` preview. An available database with zero unpublished records shows an empty preview rather than silently filling it with bundled products.
+Original editorial Indian women's fashion storefront. This branch is a **preview**, not a live store. It includes 54 original demo concepts, nine collection routes, product details, a browser-only wishlist, demo bag and comparison list. Illustrations are CSS concept artwork, not photographs. Prices, sizes and materials are unverified. Products are not purchasable; never use this branch to accept orders.
 
-Artwork is an illustrative CSS placeholder; demo prices, materials and sizes are unverified and may change. Products are not purchasable. Do not use this branch to accept real orders. Published products are intentionally excluded from this preview and require a separately designed, verified commerce flow.
+Pages read **unpublished** MySQL demo products at request time when configured; without a database URL or when the database connection is unavailable, they use the bundled `lib/catalog.ts` concepts. A successful empty database result stays empty, and unexpected database errors are surfaced rather than hidden. Published products are excluded from this preview. The fallback is not a production-commerce availability strategy.
 
-## Run and check the preview
+## Run and validate
 
-Use Node.js >=20.9. Checkout `feature/aurelia-phase-1`, then:
+Use Node.js >=20.9 on `feature/aurelia-phase-1`:
 
 ```bash
 npm install
@@ -18,21 +18,17 @@ npm run build
 npm run dev
 ```
 
-Open http://localhost:3000 and try `/shop`, `/collections/kurtas` and a product link. The homepage, shop, collection, product, saved styles and demo bag pages are rendered at request time to avoid baking local database records into the build. With `DATABASE_URL` configured and a reachable MySQL instance, the demo preview uses MySQL; with no URL or a connection failure it uses the bundled demo. Other DB errors (such as authentication or migration problems) are surfaced so they can be fixed. This fallback is for previews only, not a production commerce availability strategy. If the old local `aurelia-ui-patch.cjs` is still inside the repository, move it outside the project before linting; it is not needed.
+Open the **Local** URL printed by `npm run dev` (the port may differ from 3000). Visit `/shop`, `/collections/kurtas`, `/compare`, `/wishlist`, `/bag`, and a product-detail link. Shop and collection searches, filters and sorting operate on unpublished demo products only. In the catalogue or on a product detail page, select up to **three** concepts to compare colour, fabric concept, proposed sizes and indicative price on `/compare`. Comparison is held in this browser only and does not reserve stock. The wishlist and demo bag likewise remain planning lists: proposed-size bag entries can be changed up to 10 per style/size; neither is a real cart or order. Expanding **Preview style** on the saved-style and bag pages shows illustrative artwork and demo details.
 
-## Preview discovery and planning lists
-
-`/shop` shows all demo styles with search, category/size filters and sorting. Save ideas from product cards or detail pages, then open `/wishlist`. Select a proposed size on a product page to add that style to `/bag`; adjust the demo quantity (maximum 10 per style/size) or remove it. On either list, expand **Preview style** to view concept artwork, current demo colour, fabric and proposed sizes and indicative price without leaving the page; use the product link for full demo details. This is illustrative artwork, not a real product photograph. Entries no longer present in the unpublished preview, or bag entries with removed sizes, cannot be previewed and are excluded from the estimate.
-
-Both lists are held only in browser localStorage, capped at 100 entries per list and not synced to an account. If storage is blocked the list works in memory for the current tab but is not guaranteed to persist on reload; the page displays a notice. Storage can also be cleared; then saved entries disappear. No stock is reserved. The bag's indicative total is not a price quote. There is **no checkout, payment, customer account, order or delivery estimate**; no personal information is collected by these list features. Verify products, prices, inventory and the commerce flow separately before any real sale.
+The existing bag and wishlist share a version-1 browser storage key. Comparison uses a separate key, so enabling comparison must not erase saved styles or the bag. Wishlist and bag have a 100-entry limit; comparison has a three-style limit. If storage is blocked, lists can work in memory for the current tab but may disappear on reload. Entries no longer present in the unpublished preview, or with removed proposed sizes, are not valid for preview estimates. Indicative totals are not price quotes. There is **no checkout, payment, customer account, real inventory reservation, order or delivery estimate**, and these lists collect no personal information.
 
 ## MySQL catalogue foundation
 
-Use a **new, empty local development MySQL database** dedicated to AURELIA, not a database with important data. Start your MySQL service. In the MySQL monitor, create a schema named `aurelia_dev` (or use a different name and reflect it in the URL). A development account needs access to that schema. Prisma `migrate dev` also uses a temporary shadow database, so a development account requires permission to create and drop databases or an explicitly configured shadow database; don't grant broad privileges to an application/production user.
+Use a **new, empty local development MySQL database** dedicated to AURELIA, not a database containing important data. Start MySQL and create a schema such as `aurelia_dev`. A development account needs access to that schema. Prisma `migrate dev` also needs a temporary shadow database; use an appropriately privileged development account or a separately configured shadow database. Do not give broad development privileges to a production application user.
 
-In Windows CMD, from the project folder, run `if not exist .env copy .env.example .env` and edit the **untracked** root `.env` so `DATABASE_URL` contains your real local MySQL user, password, host, port and database name. For example, `mysql://USER:URL_ENCODED_PASSWORD@127.0.0.1:3306/aurelia_dev`. Percent-encode special characters in the password. Never share or commit your password or `.env` file. The URL is server-side only, not a `NEXT_PUBLIC_` variable.
+In Windows CMD from the actual project directory, run `if not exist .env copy .env.example .env`. Edit the **untracked** root `.env` so `DATABASE_URL` points to your own local database, for example `mysql://USER:URL_ENCODED_PASSWORD@127.0.0.1:3306/aurelia_dev`. Percent-encode special characters. Never share or commit `.env` or the password. The URL is server-side only, never `NEXT_PUBLIC_`.
 
-For a new database, validate, generate, and only after confirming it targets an empty local development database, apply the tracked migration and seed:
+Only for a **new, confirmed empty development database**:
 
 ```bash
 npm run db:validate
@@ -41,17 +37,17 @@ npm run db:migrate
 npm run db:seed
 ```
 
-**If your development database already has the initial migration and seed, do not rerun them just to check out these changes.** Use `npm run db:generate` and the read/test/build commands above. The schema models category, product, image, variant and inventory records only; other commerce models arrive alongside their feature phases. The seed is rerunnable, inserts nine categories and 54 **unpublished** original concept products with size variants, and does not overwrite existing products. No product photos or stock are created. Currency amounts are stored as integer paise, converted to rupees only for the preview display. Never run `migrate dev` against production; do not accept a database reset prompt if it refers to data you need to keep.
+**If the initial migration and seed are already installed, do not rerun them for this feature.** Do not run `migrate dev` against production or accept a reset prompt for data you need. The seed is rerunnable, inserts nine categories and 54 **unpublished** original concepts with proposed size variants, and does not overwrite existing products. It creates no product photos or stock. Currency amounts are stored as integer paise and converted to rupees only for preview display.
 
-## Structure and status
+## Structure and limits
 
-- `app/` — request-time Next.js App Router pages and styles
-- `components/` — header, footer, announcement bar, product cards, fashion placeholders and browser-only preview lists
-- `lib/catalog.ts` — bundled fallback preview data and stable display types
-- `lib/catalog-reader.ts` — server-side MySQL unpublished concept reads and connection-only fallback
-- `lib/catalog-reader.test.cjs` — mapping, empty-result and fallback tests; does not need MySQL
-- `lib/preview-list.ts` and `lib/preview-list.test.cjs` — bounded wishlist and demo bag state and validation
-- `prisma/schema.prisma`, `prisma/migrations/` and `prisma/seed.cjs` — MySQL catalogue foundation
-- `public/` — original SVG favicon
+- `app/` — request-time Next.js routes, including shop, collections, product details and browser-only planning pages.
+- `components/` — header, footer, illustrative artwork, product cards and client-only planning controls.
+- `lib/catalog.ts` — bundled fallback concepts and display types.
+- `lib/catalog-reader.ts` — server-side unpublished MySQL reads and connection-only fallback.
+- `lib/catalog-filters.ts` — pure shop and collection discovery.
+- `lib/preview-list.ts` — validated, bounded browser-only wishlist, bag and separate comparison serialization.
+- `lib/*.test.cjs` — catalogue reader, filters and browser-list behavior tests; no live MySQL needed.
+- `prisma/schema.prisma`, `prisma/migrations/`, `prisma/seed.cjs` — local MySQL catalogue foundation.
 
-Authentication, checkout and orders require verified merchandise and dedicated implementation. Admin, image uploads, AI jobs, CMS, SEO and broader testing are later phases. All brand copy, design and artwork are original AURELIA concepts and the project is not affiliated with any reference website.
+Authentication, verified merchandise, real image uploads, inventory, shipping/returns, payments, checkout and orders require separate design, approvals and testing before any sale. Admin, CMS, AI jobs, SEO and broader tests remain future work. Brand copy, artwork and concepts are original AURELIA ideas; this is not affiliated with any reference website.
