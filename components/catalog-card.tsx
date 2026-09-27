@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FashionPlaceholder } from "@/components/fashion-placeholder";
+import { SavePreview } from "@/components/preview-actions";
 import { formatPrice, type Product } from "@/lib/catalog";
 
 export function CatalogCard({ product }: { product: Product }) {
@@ -13,6 +14,7 @@ export function CatalogCard({ product }: { product: Product }) {
       <h3><Link href={`/products/${product.slug}`}>{product.name}</Link></h3>
       <p className="catalog-price">{formatPrice(product.price)} <del>{formatPrice(product.mrp)}</del></p>
       <p className="catalog-card-disclaimer">Demo product · Not available to purchase</p>
+      <SavePreview slug={product.slug} name={product.name} />
     </div>
   </article>;
 }
