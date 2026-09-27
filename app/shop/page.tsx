@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CatalogCard } from "@/components/catalog-card";
+import { ComparisonNotice } from "@/components/preview-actions";
 import { categories } from "@/lib/catalog";
 import { filterPreviewProducts } from "@/lib/catalog-filters";
 import { getPreviewProducts } from "@/lib/catalog-reader";
-
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Shop the edit", description: "Browse original AURELIA demo fashion concepts. Products are not available for purchase yet." };
 type ShopParams = { q?: string | string[]; category?: string | string[]; size?: string | string[]; sort?: string | string[] };
 type Props = { searchParams: Promise<ShopParams> };
 const first = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
-
 export default async function ShopPage({ searchParams }: Props) {
   const products = await getPreviewProducts();
   const params = await searchParams;
@@ -39,6 +38,7 @@ export default async function ShopPage({ searchParams }: Props) {
       <div className="catalog-filter-actions"><button type="submit">Apply filters</button><Link href="/shop">Clear</Link></div>
     </form>
     <p className="catalog-result-count" role="status">Showing {visible.length} of {products.length} demo styles</p>
+    <ComparisonNotice />
     {visible.length ? <div className="catalog-grid">{visible.map(product => <CatalogCard product={product} key={product.slug}/>)}</div> : <p className="notice">{products.length ? "No demo styles match these filters. Clear filters to browse the full preview." : "Preview concepts are being prepared."}</p>}
     <p className="catalog-more">Preview concepts only. Prices, sizes and product details are unverified; checkout is disabled.</p>
   </main>;
