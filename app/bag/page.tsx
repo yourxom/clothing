@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Demo bag", description: "A browser-o
 export default async function BagPage() {
   const products = await getPreviewProducts();
   return <main id="main-content" className="container shop-page">
-    <header className="shop-intro"><span className="eyebrow">Preview only / Not a checkout</span><h1 className="serif">Your demo bag</h1><p>Gather styles and proposed sizes in a planning list saved on this browser. No stock is held, no order can be placed and no payment is collected.</p></header>
+    <header className="shop-intro"><span className="eyebrow">Preview only / Not a checkout</span><h1 className="serif">Your demo bag</h1><p>Gather styles and proposed sizes in a browser-only planning list. Choose “Preview style” below to see concept artwork and details. Quantities and the illustrative total do not reserve stock or create an order; no payment is collected.</p></header>
     <BagView products={products}/>
     <p className="catalog-more"><Link href="/shop">Explore all demo styles ↗</Link></p>
   </main>;
