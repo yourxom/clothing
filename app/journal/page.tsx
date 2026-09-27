@@ -1,0 +1,5 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { journalEntries } from "@/lib/editorial";
+export const metadata: Metadata = { title: "Style notes", description: "Original AURELIA editorial notes for an imagined wardrobe." };
+export default function JournalPage() { return <main id="main-content" className="container shop-page content-page"><span className="eyebrow">AURELIA editorial</span><h1 className="serif">Style notes</h1><p className="content-lead">Ideas to wear, and room to make them your own. These are editorial stories, not product claims.</p><div className="content-card-grid">{journalEntries.map(entry => <article className="content-card" key={entry.slug}><span className="eyebrow"><time dateTime={entry.date}>{entry.date}</time> · {entry.author}</span><h2 className="serif"><Link href={`/journal/${entry.slug}`}>{entry.title}</Link></h2><p>{entry.summary}</p><Link className="text-link" href={`/journal/${entry.slug}`}>Read the note ↗</Link></article>)}</div></main>; }
