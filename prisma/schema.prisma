@@ -1,4 +1,6 @@
-// Phase 2 catalogue foundation. Other commerce entities are added with their feature phases.
+// AURELIA storefront — full schema covering catalogue, auth, commerce, and content.
+// All prices stored as INR paise (integer). Never use floats for money.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +10,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
 enum ProductImageType {
   PRODUCT
   MODEL
@@ -15,6 +21,353 @@ enum ProductImageType {
   LIFESTYLE
   VIDEO
 }
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+// Legacy order-level payment status — kept for backward compatibility with
+// existing Order rows/queries. New payment tracking uses PaymentState below.
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS (dual-mode UPI: merchant/automatic + personal/manual)
+// ─────────────────────────────────────────────
+
+// Which payment mode a given Payment attempt used. Stored per-payment so
+// changing admin config later never rewrites historical records.
+enum PaymentMethod {
+  MERCHANT_UPI
+  PERSONAL_UPI
+}
+
+// Lifecycle of a single payment attempt. Kept separate from OrderStatus —
+// shipping/fulfilment state must never be mixed with payment state.
+enum PaymentState {
+  PENDING_PAYMENT   // created, awaiting customer action
+  UNDER_REVIEW      // personal UPI: customer submitted UTR/screenshot, awaiting admin
+  PAID              // verified (automatically or by admin)
+  FAILED            // provider reported failure
+  REJECTED          // admin rejected the manual submission
+  EXPIRED           // payment session/attempt expired before completion
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum VerificationType {
+  AUTOMATIC // verified by provider webhook/API + server-side checks
+  MANUAL    // verified by an admin comparing against the real bank/UPI app
+}
+
+enum PaymentEventType {
+  PAYMENT_CREATED
+  CUSTOMER_SUBMITTED_PAYMENT
+  WEBHOOK_RECEIVED
+  PAYMENT_VERIFIED
+  PAYMENT_REJECTED
+  PAYMENT_EXPIRED
+  REFUND_CREATED
+  SETTINGS_UPDATED
+}
+
+// Singleton (one row) admin-configured payment settings. Secrets (apiSecret,
+// webhookSecret) are stored AES-256-GCM encrypted — see lib/payments/crypto.ts.
+// Never returned to the frontend in decrypted form.
+model PaymentSettings {
+  id        String   @id @default(cuid())
+
+  // Which methods are active, and which is offered first/by default.
+  merchantUpiEnabled Boolean       @default(false)
+  personalUpiEnabled Boolean       @default(false)
+  defaultMethod      PaymentMethod @default(PERSONAL_UPI)
+
+  // ── Merchant UPI (automatic verification via provider) ──────────
+  merchantProvider      String?  // "razorpay" | "cashfree" | "bank_upi" | ...
+  merchantName          String?  // display name shown in admin, e.g. "Razorpay"
+  merchantMerchantId    String?
+  merchantVpa           String?  // merchant UPI ID / VPA, if provider needs it
+  merchantApiKeyEnc     String?  @db.Text // encrypted
+  merchantApiSecretEnc  String?  @db.Text // encrypted
+  merchantWebhookSecretEnc String? @db.Text // encrypted
+  merchantEnvironment   String   @default("test") // "test" | "production"
+  merchantAutoVerify    Boolean  @default(true)
+
+  // ── Personal UPI (manual verification) ───────────────────────────
+  personalAccountName   String?
+  personalUpiId         String?  // VPA, e.g. example@upi
+  personalQrImageUrl    String?  // admin-uploaded static QR (optional)
+  personalBankName      String?
+  personalInstructions  String?  @db.Text
+  personalUseDynamicQr  Boolean  @default(true) // prefer backend-generated QR over uploaded image
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+// One row per payment attempt (an order may have more than one, e.g. a retry
+// after EXPIRED/FAILED/REJECTED — the original row is never deleted).
+model Payment {
+  id                 String            @id @default(cuid())
+  orderId            String
+  order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId             String?
+  user               User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  paymentMethod      PaymentMethod
+  provider           String?           // e.g. "razorpay" | "axis" | "icici" | "hdfc" | "kotak" | "bob"
+  bankAccountId      String?           // BankPaymentAccount.id — which account processed this
+  bankAccount        BankPaymentAccount? @relation("BankAccountPayments", fields: [bankAccountId], references: [id], onDelete: SetNull)
+  providerPaymentId  String?           // provider's payment id
+  providerOrderId    String?           // provider's order id
+  providerSignature  String?           // last verified signature, for audit (not secret material)
+  merchantReference  String?           // our unique reference sent to bank (e.g. PAY-ORD12345-A83F9K)
+
+  expectedAmountPaise Int              // server-calculated, authoritative
+  receivedAmountPaise Int?             // amount actually confirmed received
+  currency           String            @default("INR")
+
+  // Personal UPI manual-verification fields
+  utr                String?           // normalized (digits/alnum, trimmed, uppercased)
+  payerName          String?           // name on the bank / UPI account from which payment was made
+  screenshotUrl      String?           @db.Text
+  possibleDuplicate  Boolean           @default(false) // UTR matched a previously-approved payment
+
+  status             PaymentState      @default(PENDING_PAYMENT)
+  verificationType   VerificationType
+
+  rejectionReason    String?
+  verifiedById        String?          // admin User.id, or null for SYSTEM
+  verifiedBySystem    Boolean          @default(false)
+  verifiedAt          DateTime?
+
+  expiresAt          DateTime?         // merchant payment-session expiry, when supported
+
+  submittedAt        DateTime?         // when customer submitted UTR/screenshot
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  events             PaymentEvent[]
+  transactions       PaymentTransaction[]
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+  @@index([paymentMethod, status])
+  @@index([utr])
+  @@index([providerPaymentId])
+  @@index([providerOrderId])
+}
+
+// Append-only audit trail of everything that happens to a Payment.
+model PaymentEvent {
+  id         String           @id @default(cuid())
+  paymentId  String
+  payment    Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  eventType  PaymentEventType
+  oldStatus  PaymentState?
+  newStatus  PaymentState?
+  source     String           // "customer" | "admin" | "webhook" | "system"
+  adminId    String?          // admin User.id when source = "admin"
+  metadata   String?          @db.Text // JSON blob — freeform context (never store secrets/PINs)
+  createdAt  DateTime         @default(now())
+
+  @@index([paymentId])
+  @@index([eventType])
+}
+
+// Idempotency guard for provider webhooks — one row per (provider, eventId)
+// so a retried/duplicated webhook delivery can never be processed twice.
+model WebhookEvent {
+  id         String   @id @default(cuid())
+  provider   String
+  eventId    String   // provider's unique event/notification id
+  payload    String   @db.Text
+  processedAt DateTime @default(now())
+
+  @@unique([provider, eventId])
+}
+
+// ─────────────────────────────────────────────
+// BANK UPI PAYMENT ACCOUNTS (multi-provider, admin-managed)
+// Each row is one configured merchant account with one bank.
+// Multiple accounts may exist; only one is "default" at a time.
+// Secrets are AES-256-GCM encrypted — never stored/returned plaintext.
+// ─────────────────────────────────────────────
+
+enum BankProvider {
+  AXIS
+  ICICI
+  HDFC
+  KOTAK
+  BOB
+}
+
+enum BankAccountStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_VERIFICATION
+}
+
+enum ReconciliationStatus {
+  MATCHED            // transaction matches an order exactly
+  UNMATCHED          // no matching order found
+  DUPLICATE          // same transaction already processed
+  AMOUNT_MISMATCH    // transaction found but amount differs
+  MANUAL_REVIEW      // flagged for human review
+  RESOLVED           // admin manually resolved
+}
+
+model BankPaymentAccount {
+  id             String            @id @default(cuid())
+  provider       BankProvider
+  displayName    String            // e.g. "AURELIA Axis Merchant"
+  merchantVpa    String            // e.g. aurelia@axis
+  merchantName   String            // payee name shown in UPI app
+  currency       String            @default("INR")
+  environment    String            @default("test") // "test" | "production"
+  isActive       Boolean           @default(false)
+  isDefault      Boolean           @default(false)
+  status         BankAccountStatus @default(PENDING_VERIFICATION)
+
+  // Encrypted credentials (AES-256-GCM via lib/payments/crypto.ts).
+  // Field names are generic — different banks use different credential names;
+  // the bank-specific provider class knows how to interpret each field.
+  // Never returned to the frontend in decrypted form.
+  apiKeyEnc          String?  @db.Text  // bank API key / client ID
+  apiSecretEnc       String?  @db.Text  // bank API secret / client secret
+  webhookSecretEnc   String?  @db.Text  // webhook signing secret / HMAC key
+  merchantIdEnc      String?  @db.Text  // merchant ID / MID (some banks require this)
+  additionalCredsEnc String?  @db.Text  // JSON blob for bank-specific extra fields (encrypted)
+
+  // Non-sensitive config
+  callbackUrl    String?          // bank-configured callback/redirect URL
+  webhookUrl     String?          // the webhook endpoint URL for this account
+  notes          String?  @db.Text
+
+  // Audit
+  lastTestedAt   DateTime?
+  lastTestResult String?          // "ok" | error message
+  createdBy      String?          // admin User.id
+  updatedBy      String?          // admin User.id who last modified
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  payments       Payment[] @relation("BankAccountPayments")
+  transactions   PaymentTransaction[]
+
+  @@index([provider, isActive])
+  @@index([isDefault])
+}
+
+// Detailed record of every bank transaction received/queried.
+// Created on webhook receipt or status-check response.
+// Never deleted — immutable audit trail.
+model PaymentTransaction {
+  id                  String                @id @default(cuid())
+  paymentId           String?               // Payment row if matched
+  payment             Payment?              @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  bankAccountId       String?
+  bankAccount         BankPaymentAccount?   @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  orderId             String?               // direct link for fast reconciliation lookups
+
+  provider            String                // "axis" | "icici" | "hdfc" | "kotak" | "bob"
+  providerTransactionId String?             // bank's own transaction ID
+  rrn                 String?               // RRN (Retrieval Reference Number) from bank
+  merchantReference   String?               // our reference we sent to the bank (e.g. PAY-ORD-...)
+  utr                 String?               // UPI Transaction Reference
+  payerVpa            String?               // customer's UPI ID (payer)
+  payeeVpa            String?               // our merchant UPI ID (payee)
+
+  amountPaise         Int                   // amount in the bank's response
+  currency            String                @default("INR")
+  status              String                // raw status string from bank (SUCCESS/FAILURE/PENDING etc.)
+
+  // Reconciliation
+  reconciliationStatus ReconciliationStatus @default(MANUAL_REVIEW)
+  reconciliationNote  String?               // reason for mismatch/flag
+
+  // Verification outcome
+  verifiedAt          DateTime?
+  verificationMethod  String?               // "webhook" | "status_api" | "manual"
+
+  // Raw encrypted response from bank (never expose to frontend)
+  rawResponseEnc      String?  @db.Text     // encrypted JSON of bank's full response
+
+  // Webhook or polling
+  source              String                @default("webhook") // "webhook" | "status_poll" | "manual"
+  receivedAt          DateTime              @default(now())
+  createdAt           DateTime              @default(now())
+
+  @@unique([provider, providerTransactionId])
+  @@unique([provider, rrn])
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([bankAccountId])
+  @@index([merchantReference])
+  @@index([reconciliationStatus])
+  @@index([receivedAt])
+}
+
+// Admin audit log — every sensitive admin action is recorded here.
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String   // e.g. "APPROVE_PAYMENT", "UPDATE_BANK_ACCOUNT", "CHANGE_PROVIDER"
+  entityType String?  // e.g. "Payment", "BankPaymentAccount", "Order"
+  entityId   String?
+  metadata   String?  @db.Text // JSON blob (no secrets)
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action])
+}
+
+
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+enum SavedItemType {
+  WISHLIST
+  BAG
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+enum CouponScope {
+  GENERAL   // public code — any user may redeem, but only once each
+  PERSONAL  // bound to one specific user via UserCoupon
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  RECEIVED
+  REFUNDED
+}
+
+// ─────────────────────────────────────────────
+// CATALOGUE
+// ─────────────────────────────────────────────
 
 model Category {
   id          String    @id @default(cuid())
@@ -38,11 +391,14 @@ model Product {
   color       String
   fabric      String
   tone        String
-  price       Int              // INR minor units (paise), not floating point
-  mrp         Int              // INR minor units (paise)
+  price       Int
+  mrp         Int
   published   Boolean          @default(false)
   images      ProductImage[]
   variants    ProductVariant[]
+  orderLines  OrderLine[]
+  savedItems  SavedItem[]
+  reviews     Review[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -57,6 +413,7 @@ model ProductImage {
   url       String           @db.Text
   type      ProductImageType @default(PRODUCT)
   altText   String
+  color     String?          // optional colourway this image represents (matches ProductVariant.color)
   sortOrder Int              @default(0)
   isPrimary Boolean          @default(false)
   createdAt DateTime         @default(now())
@@ -84,4 +441,402 @@ model Inventory {
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   quantity  Int            @default(0)
   updatedAt DateTime       @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// AUTH — Users & Sessions
+// ─────────────────────────────────────────────
+
+model User {
+  id             String      @id @default(cuid())
+  email          String      @unique
+  emailVerified  DateTime?
+  passwordHash   String?     // null for OAuth-only accounts
+  name           String?
+  phone          String?     @unique // E.164-ish digits; used for phone login/register
+  phoneVerified  DateTime?   // set once a phone number is OTP-verified
+  avatarUrl      String?     @db.Text
+  role           String      @default("customer") // customer | admin
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Referral & points (store credit)
+  referralCode   String?     @unique            // this user's own code to share
+  referredById   String?                        // who referred this user (set at signup)
+  referredBy     User?       @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals      User[]      @relation("Referrals")
+  pointsBalance  Int         @default(0)         // spendable store credit, in paise
+
+  sessions       Session[]
+  addresses      Address[]
+  orders         Order[]
+  savedItems     SavedItem[]
+  reviews        Review[]
+  userCoupons    UserCoupon[]
+  pointsLedger   PointsLedger[]
+  payments       Payment[]
+
+  @@index([email])
+  @@index([referredById])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @db.VarChar(512)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ─────────────────────────────────────────────
+// COMMERCE — Addresses, Orders, Order Lines
+// ─────────────────────────────────────────────
+
+model Address {
+  id         String      @id @default(cuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       AddressType @default(SHIPPING)
+  fullName   String
+  phone      String
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  pincode    String
+  country    String      @default("India")
+  isDefault  Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  shippingOrders Order[] @relation("ShippingAddress")
+  billingOrders  Order[] @relation("BillingAddress")
+
+  @@index([userId])
+}
+
+model Order {
+  id                String        @id @default(cuid())
+  orderNumber       String        @unique // e.g. AUR-2026-00001
+  userId            String?
+  user              User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestEmail        String?       // for guest checkout
+  status            OrderStatus   @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  paymentProvider   String?       // razorpay | stripe | cod
+  paymentReference  String?       // gateway order/payment ID
+  subtotalPaise     Int           // sum of lines before shipping/tax
+  shippingPaise     Int           @default(0)
+  taxPaise          Int           @default(0)
+  discountPaise     Int           @default(0)
+  couponCode        String?
+  pointsUsedPaise   Int           @default(0)  // store credit redeemed on this order
+  referralRewarded  Boolean       @default(false) // referrer already paid out for this order
+  totalPaise        Int           // subtotal + shipping + tax - discount - pointsUsed
+  currency          String        @default("INR")
+  shippingAddressId String?
+  shippingAddress   Address?      @relation("ShippingAddress", fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  billingAddressId  String?
+  billingAddress    Address?      @relation("BillingAddress", fields: [billingAddressId], references: [id], onDelete: SetNull)
+  notes             String?       @db.Text
+  trackingNumber    String?
+  trackingProvider  String?
+  lines             OrderLine[]
+  payments          Payment[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([status])
+}
+
+model OrderLine {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName String  // snapshot at time of order
+  variantSku  String  // snapshot
+  size        String
+  color       String
+  quantity    Int
+  unitPaise   Int     // price per unit at time of order
+  totalPaise  Int     // unitPaise * quantity
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ─────────────────────────────────────────────
+// SAVED ITEMS — Wishlist & Bag (server-side)
+// ─────────────────────────────────────────────
+
+model SavedItem {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type      SavedItemType
+  size      String?       // required for BAG type
+  color     String?       // chosen colour for BAG type (multi-colour products)
+  quantity  Int           @default(1)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([userId, productId, type, size, color])
+  @@index([userId, type])
+}
+
+// ─────────────────────────────────────────────
+// REVIEWS
+// ─────────────────────────────────────────────
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int      // 1–5
+  title     String?
+  body      String   @db.Text
+  verified  Boolean  @default(false) // true = from a real order
+  approved  Boolean  @default(false) // admin must approve
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, userId])
+  @@index([productId, approved])
+}
+
+// ─────────────────────────────────────────────
+// CONTENT — Newsletter & Contact
+// ─────────────────────────────────────────────
+
+model NewsletterSubscriber {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  confirmedAt DateTime?
+  source      String    @default("website") // website | footer | popup
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String   @default("general")
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([read, createdAt])
+}
+
+// ─────────────────────────────────────────────
+// AUTH TOKENS — Password reset
+// ─────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique @db.VarChar(512)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
+model EmailVerifyToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique @db.VarChar(512)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
+// ─────────────────────────────────────────────
+// COUPONS
+// ─────────────────────────────────────────────
+
+model Coupon {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  description    String?
+  discountType   DiscountType @default(PERCENT)
+  discountValue  Int          // percent (1-100) OR fixed amount in paise
+  minOrderPaise  Int          @default(0)  // minimum subtotal to qualify
+  maxDiscountPaise Int?       // cap for percentage discounts
+  usageLimit     Int?         // total redemptions allowed (null = unlimited)
+  usageCount     Int          @default(0)
+  perUserLimit   Int          @default(1)
+  singleUse      Boolean      @default(false) // once redeemed by anyone, permanently locked
+  isWelcome      Boolean      @default(false) // the per-user welcome coupon template
+  scope          CouponScope  @default(GENERAL) // GENERAL = any user once; PERSONAL = one owner only
+  active         Boolean      @default(true)
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  userCoupons    UserCoupon[]
+  redemptions    CouponRedemption[]
+
+  @@index([code, active])
+}
+
+// A coupon granted to a specific user (e.g. the welcome coupon). Single-use by
+// design: once `redeemedAt` is set it can never be applied again.
+model UserCoupon {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  couponId       String
+  coupon         Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  code           String    // snapshot of Coupon.code for fast lookup
+  redeemedAt     DateTime?
+  redeemedOrderId String?  // the order this coupon was used on
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // A user holds a given coupon at most once.
+  @@unique([userId, couponId])
+  @@index([userId, redeemedAt])
+  @@index([code])
+}
+
+// A redemption record: one row per (coupon, user). The @@unique([couponId,
+// userId]) makes the "each user may redeem a coupon only once" rule race-safe
+// inside the order transaction — a second redemption by the same user throws.
+// GENERAL coupons therefore allow one redemption PER user; PERSONAL/welcome
+// coupons only have one owner so this also caps them at a single use.
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  code      String   // snapshot of the coupon code at redemption time
+  userId    String
+  orderId   String
+  createdAt DateTime @default(now())
+
+  @@unique([couponId, userId])
+  @@index([couponId])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// POINTS / STORE CREDIT
+// ─────────────────────────────────────────────
+
+enum PointsReason {
+  REFERRAL_FIXED    // flat reward when a referred user makes their first purchase
+  REFERRAL_PERCENT  // percentage of the referred user's first order
+  REDEEMED          // spent at checkout (negative delta)
+  ADMIN_ADJUST      // manual admin credit/debit
+  REFUND            // points returned (e.g. order cancelled)
+}
+
+// Append-only ledger of every points movement. deltaPaise is positive for
+// earnings, negative for redemptions. balanceAfterPaise snapshots the running
+// balance so history is auditable. User.pointsBalance is the live cached total.
+model PointsLedger {
+  id               String       @id @default(cuid())
+  userId           String
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deltaPaise       Int          // + earn, - spend
+  balanceAfterPaise Int         // running balance after this entry
+  reason           PointsReason
+  description      String?
+  orderId          String?      // the order that earned/spent these points
+  sourceUserId     String?      // for referral earnings: the referred user who triggered it
+  createdAt        DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([orderId])
+}
+
+// ─────────────────────────────────────────────
+// RETURNS / REFUNDS
+// ─────────────────────────────────────────────
+
+model ReturnRequest {
+  id          String       @id @default(cuid())
+  orderId     String
+  userId      String
+  orderNumber String       // snapshot
+  reason      String       @db.Text
+  status      ReturnStatus @default(REQUESTED)
+  adminNote   String?      @db.Text
+  refundPaise Int?         // amount refunded once processed
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// STOCK / RESTOCK ALERTS
+// ─────────────────────────────────────────────
+
+model StockAlert {
+  id          String    @id @default(cuid())
+  email       String
+  productSlug String
+  productName String    // snapshot
+  size        String?
+  notified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@unique([email, productSlug, size])
+  @@index([productSlug, notified])
+}
+
+// ─────────────────────────────────────────────
+// CHECKOUT OTP (email / phone verification)
+// ─────────────────────────────────────────────
+
+model CheckoutOtp {
+  id         String   @id @default(cuid())
+  identifier String   // email address or phone number
+  channel    String   // "email" | "phone"
+  codeHash   String   // hashed 6-digit code
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  verifiedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, channel])
+}
+
+// ─────────────────────────────────────────────
+// SITE SETTINGS (key-value, admin-editable)
+// e.g. whatsapp_number, whatsapp_message, whatsapp_enabled
+// ─────────────────────────────────────────────
+
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([key])
 }

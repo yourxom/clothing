@@ -2,68 +2,224 @@
 import Link from "next/link";
 import { useState } from "react";
 import { FashionPlaceholder } from "./fashion-placeholder";
+import { ProductMedia } from "./product-media";
 import { formatPrice, type Product } from "@/lib/catalog";
 import { usePreviewStore } from "./preview-store";
 
 type Item = { slug: string; name: string; sizes: readonly string[] };
+
 export function SavePreview({ slug, name }: Pick<Item, "slug" | "name">) {
   const { ready, state, save } = usePreviewStore();
   const saved = ready && state.wishlist.includes(slug);
-  return <button className="preview-save" type="button" disabled={!ready} aria-pressed={saved} aria-label={`${saved ? "Remove" : "Save"} ${name} ${saved ? "from" : "to"} wishlist`} onClick={() => save(slug)}>{saved ? "♥ Saved" : "♡ Save style"}</button>;
+  return (
+    <button className="preview-save" type="button" disabled={!ready} aria-pressed={saved}
+      aria-label={`${saved ? "Remove" : "Save"} ${name} ${saved ? "from" : "to"} wishlist`}
+      onClick={() => save(slug)}>
+      {saved ? "♥ Saved" : "♡ Save"}
+    </button>
+  );
 }
+
 export function ComparePreview({ slug, name }: Pick<Item, "slug" | "name">) {
   const { ready, comparison, compare } = usePreviewStore();
   const selected = comparison.includes(slug);
   const full = comparison.length >= 3 && !selected;
-  return <button className="preview-save" type="button" disabled={!ready || full} aria-pressed={selected} aria-label={`${selected ? "Remove" : "Add"} ${name} ${selected ? "from" : "to"} comparison`} title={full ? "Remove a style from comparison before adding another" : undefined} onClick={() => compare(slug)}>{selected ? "✓ Comparing" : "Compare style"}</button>;
+  return (
+    <button className="preview-save" type="button" disabled={!ready || full} aria-pressed={selected}
+      aria-label={`${selected ? "Remove" : "Add"} ${name} ${selected ? "from" : "to"} comparison`}
+      title={full ? "Remove a style from comparison before adding another" : undefined}
+      onClick={() => compare(slug)}>
+      {selected ? "✓ Comparing" : "Compare"}
+    </button>
+  );
 }
+
 export function ComparisonNotice() {
-  const { ready, comparison, persistent } = usePreviewStore();
+  const { ready, comparison } = usePreviewStore();
   if (!ready || comparison.length === 0) return null;
-  return <p className="catalog-result-count" role="status">{comparison.length} of 3 demo styles selected. <Link className="text-link" href="/compare">Compare styles ↗</Link>{!persistent ? " Browser storage is unavailable; selections may disappear on reload." : ""}</p>;
+  return (
+    <p className="catalog-result-count" role="status">
+      {comparison.length} of 3 styles selected. <Link className="text-link" href="/compare">Compare ↗</Link>
+    </p>
+  );
 }
+
 export function ProductPreviewActions({ slug, name, sizes }: Item) {
   const { ready, state, add, save } = usePreviewStore();
   const [size, setSize] = useState("");
   const [message, setMessage] = useState("");
   const saved = ready && state.wishlist.includes(slug);
   const selectedSize = sizes.includes(size) ? size : "";
-  return <div className="preview-product-actions">
-    <label htmlFor="preview-size">Proposed size</label>
-    <select id="preview-size" value={size} onChange={event => { setSize(event.target.value); setMessage(""); }} disabled={!ready || sizes.length === 0}>
-      <option value="">Select a proposed size</option>{sizes.map(option => <option key={option} value={option}>{option}</option>)}
-    </select>
-    <div className="preview-action-row"><button type="button" disabled={!ready || !selectedSize} onClick={() => { if (!selectedSize) return; add(slug, selectedSize); setMessage(`${name} (${selectedSize}) added to your demo bag. No order was placed.`); }}>Add to demo bag</button><button type="button" disabled={!ready} aria-pressed={saved} onClick={() => save(slug)}>{saved ? "♥ Saved" : "♡ Save style"}</button><ComparePreview slug={slug} name={name}/></div>
-    <ComparisonNotice/>
-    <p role="status" aria-live="polite">{message || "Demo bag is a planning list only. Stock, size and price are unverified; checkout is disabled."}</p>
-  </div>;
+
+  return (
+    <div className="preview-product-actions">
+      <label htmlFor="preview-size">Select size</label>
+      <select id="preview-size" value={size}
+        onChange={event => { setSize(event.target.value); setMessage(""); }}
+        disabled={!ready || sizes.length === 0}>
+        <option value="">Choose a size</option>
+        {sizes.map(option => <option key={option} value={option}>{option}</option>)}
+      </select>
+
+      <div className="preview-action-row">
+        <button type="button" className="pa-add-btn" disabled={!ready || !selectedSize}
+          onClick={() => {
+            if (!selectedSize) return;
+            add(slug, selectedSize);
+            setMessage(`${name} (Size ${selectedSize}) added to your bag.`);
+          }}>
+          Add to bag
+        </button>
+        <button type="button" className="pa-save-btn" disabled={!ready} aria-pressed={saved}
+          onClick={() => save(slug)}>
+          {saved ? "♥ Saved" : "♡ Save"}
+        </button>
+        <ComparePreview slug={slug} name={name} />
+      </div>
+      <ComparisonNotice />
+      {message && <p className="pa-message" role="status" aria-live="polite">{message} <Link href="/bag" className="text-link">View bag ↗</Link></p>}
+    </div>
+  );
 }
-function InlinePreview({ product }: { product: Product }) {
-  return <details className="preview-inline"><summary>Preview style</summary><div className="preview-inline-content"><FashionPlaceholder label={`${product.name} illustrative demo artwork`} tone={product.tone} /><div><h3 className="serif">{product.name}</h3><p>{product.description}</p><dl><div><dt>Colour</dt><dd>{product.color}</dd></div><div><dt>Fabric concept</dt><dd>{product.fabric}</dd></div><div><dt>Proposed sizes</dt><dd>{product.sizes.join(" · ") || "Not specified"}</dd></div><div><dt>Indicative price</dt><dd>{formatPrice(product.price)}</dd></div></dl><Link className="text-link" href={`/products/${product.slug}`}>View full demo details ↗</Link><p className="catalog-card-disclaimer">Concept artwork, not a product photo. Details and price are unverified; no purchase is available.</p></div></div></details>;
-}
-const storageNotice = <p className="notice" role="status">Browser storage is unavailable. This planning list may disappear when the page reloads.</p>;
+
 export function WishlistView({ products }: { products: Product[] }) {
-  const { ready, persistent, state, save } = usePreviewStore();
-  if (!ready) return <p className="notice" role="status">Loading saved styles from this browser…</p>;
+  const { ready, state, save } = usePreviewStore();
+  if (!ready) return <p className="notice" role="status">Loading your saved styles…</p>;
   const catalog = new Map(products.map(product => [product.slug, product]));
   const available = state.wishlist.flatMap(slug => { const product = catalog.get(slug); return product ? [product] : []; });
-  const missing = state.wishlist.filter(slug => !catalog.has(slug));
-  return <section aria-label="Saved preview styles">{!persistent && storageNotice}<p className="catalog-result-count">{available.length} saved demo styles</p>{available.length ? <div className="preview-list">{available.map(product => <article className="preview-list-item" key={product.slug}><div className="preview-list-info"><Link href={`/products/${product.slug}`}>{product.name}</Link><p>Demo style · {product.color} · Indicative {formatPrice(product.price)}</p><InlinePreview product={product}/></div><button type="button" onClick={() => save(product.slug)} aria-label={`Remove ${product.name} from saved styles`}>Remove</button></article>)}</div> : <p className="notice">No saved styles yet. Browse the demo catalogue to save ideas.</p>}{missing.length > 0 && <p className="notice" role="status">{missing.length} saved style(s) are no longer in this preview catalogue. They cannot be previewed or reserved.</p>}</section>;
+
+  return (
+    <section aria-label="Saved styles">
+      <p className="catalog-result-count">{available.length} saved {available.length === 1 ? "style" : "styles"}</p>
+      {available.length ? (
+        <div className="catalog-grid">
+          {available.map(product => (
+            <article className="catalog-card" key={product.slug}>
+              <Link href={`/products/${product.slug}`} className="catalog-card-media">
+                <ProductMedia src={product.image} alt={product.name} tone={product.tone} />
+              </Link>
+              <div className="catalog-card-copy">
+                <p className="catalog-card-overline">{product.color}</p>
+                <h3><Link href={`/products/${product.slug}`}>{product.name}</Link></h3>
+                <p className="catalog-price">{formatPrice(product.price)}
+                  {product.mrp > product.price && <del>{formatPrice(product.mrp)}</del>}</p>
+                <button type="button" className="preview-save" onClick={() => save(product.slug)}
+                  aria-label={`Remove ${product.name} from saved styles`}>Remove</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="notice">No saved styles yet. <Link href="/shop" className="text-link">Browse the collection ↗</Link></p>
+      )}
+    </section>
+  );
 }
+
 export function BagView({ products }: { products: Product[] }) {
-  const { ready, persistent, state, quantity } = usePreviewStore();
-  if (!ready) return <p className="notice" role="status">Loading demo bag from this browser…</p>;
+  const { ready, state, quantity } = usePreviewStore();
+  if (!ready) return <p className="notice" role="status">Loading your bag…</p>;
   const catalog = new Map(products.map(product => [product.slug, product]));
-  const available = state.bag.flatMap(item => { const product = catalog.get(item.slug); return product && product.sizes.includes(item.size) ? [{ item, product }] : []; });
-  const missing = state.bag.length - available.length;
-  const indicativeTotal = available.reduce((total, { item, product }) => total + item.quantity * product.price, 0);
-  return <section aria-label="Demo bag contents">{!persistent && storageNotice}<p className="catalog-result-count">{available.reduce((sum, { item }) => sum + item.quantity, 0)} demo items in this browser</p>{available.length ? <div className="preview-list">{available.map(({ item, product }) => <article className="preview-list-item" key={`${item.slug}:${item.size}`}><div className="preview-list-info"><Link href={`/products/${item.slug}`}>{product.name}</Link><p>Proposed size: {item.size} · Indicative {formatPrice(product.price)} per item</p><InlinePreview product={product}/></div><div className="preview-quantity"><label htmlFor={`bag-${item.slug}-${item.size}`}>Demo quantity</label><select id={`bag-${item.slug}-${item.size}`} value={item.quantity} onChange={event => quantity(item.slug, item.size, Number(event.target.value))}>{Array.from({ length: 10 }, (_, n) => <option key={n + 1} value={n + 1}>{n + 1}</option>)}</select><button type="button" onClick={() => quantity(item.slug, item.size, 0)} aria-label={`Remove ${product.name}, size ${item.size}, from demo bag`}>Remove</button></div></article>)}</div> : <p className="notice">Your demo bag is empty. Select a proposed size on a product page to add an idea.</p>}{missing > 0 && <p className="notice" role="status">{missing} saved entry/entries are no longer in this preview (or the proposed size changed). They cannot be previewed and are excluded from the estimate.</p>}{available.length > 0 && <p className="preview-estimate">Illustrative total: {formatPrice(indicativeTotal)}. This is not a payable amount or a price quote.</p>}<p className="notice">Preview only. No reservation, delivery estimate, payment or checkout is available.</p></section>;
+  const available = state.bag.flatMap(item => {
+    const product = catalog.get(item.slug);
+    return product && product.sizes.includes(item.size) ? [{ item, product }] : [];
+  });
+  const colourLabel = (item: { color: string }, product: { color: string }) => item.color || product.color;
+  const itemCount = available.reduce((sum, { item }) => sum + item.quantity, 0);
+  // Prices from getPreviewProducts() are in rupees. Free shipping over ₹2,000, else ₹99.
+  const subtotal  = available.reduce((total, { item, product }) => total + item.quantity * product.price, 0);
+  const shipping  = subtotal >= 2000 ? 0 : 99;
+  const total     = subtotal + shipping;
+
+  return (
+    <section aria-label="Shopping bag" className="bag-view">
+      {available.length ? (
+        <div className="bag-layout">
+          <div className="bag-items">
+            <p className="catalog-result-count">{itemCount} {itemCount === 1 ? "item" : "items"} in your bag</p>
+            {available.map(({ item, product }) => (
+              <article className="bag-item" key={`${item.slug}:${item.color}:${item.size}`}>
+                <div className="bag-item-art">
+                  <ProductMedia
+                    src={product.colorImages?.[item.color] ?? product.image}
+                    alt={product.name}
+                    tone={product.tone}
+                  />
+                </div>
+                <div className="bag-item-info">
+                  <Link href={`/products/${item.slug}`} className="bag-item-name">{product.name}</Link>
+                  <p className="bag-item-meta">{colourLabel(item, product)} · Size {item.size}</p>
+                  <p className="bag-item-price">{formatPrice(product.price)}</p>
+                </div>
+                <div className="bag-item-controls">
+                  <label htmlFor={`bag-${item.slug}-${item.color}-${item.size}`} className="sr-only">Quantity</label>
+                  <select id={`bag-${item.slug}-${item.color}-${item.size}`} value={item.quantity}
+                    onChange={event => quantity(item.slug, item.size, item.color, Number(event.target.value))}>
+                    {Array.from({ length: 10 }, (_, n) => <option key={n + 1} value={n + 1}>{n + 1}</option>)}
+                  </select>
+                  <button type="button" className="bag-remove"
+                    onClick={() => quantity(item.slug, item.size, item.color, 0)}
+                    aria-label={`Remove ${product.name}, ${colourLabel(item, product)}, size ${item.size}`}>Remove</button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <aside className="bag-summary">
+            <h2 className="serif">Order summary</h2>
+            <div className="bag-summary-row"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
+            <div className="bag-summary-row"><span>Shipping</span><span>{shipping === 0 ? "FREE" : formatPrice(shipping)}</span></div>
+            <div className="bag-summary-row bag-summary-total"><span>Total</span><span>{formatPrice(total)}</span></div>
+            {shipping > 0 && (
+              <p className="bag-shipping-hint">Add {formatPrice(2000 - subtotal)} more for free shipping.</p>
+            )}
+            <Link href="/checkout" className="button bag-checkout-btn">Proceed to checkout</Link>
+            <Link href="/shop" className="text-link bag-continue">Continue shopping ↗</Link>
+          </aside>
+        </div>
+      ) : (
+        <div className="bag-empty">
+          <span className="bag-empty-icon" aria-hidden="true">🛍️</span>
+          <h2 className="serif">Your bag is empty</h2>
+          <p>Add styles you love to your bag and they&apos;ll appear here.</p>
+          <Link href="/shop" className="button" style={{ marginTop: "1rem" }}>Start shopping</Link>
+        </div>
+      )}
+    </section>
+  );
 }
+
 export function ComparisonView({ products }: { products: Product[] }) {
-  const { ready, persistent, comparison, compare } = usePreviewStore();
-  if (!ready) return <p className="notice" role="status">Loading comparison from this browser…</p>;
+  const { ready, comparison, compare } = usePreviewStore();
+  if (!ready) return <p className="notice" role="status">Loading comparison…</p>;
   const catalog = new Map(products.map(product => [product.slug, product]));
   const available = comparison.flatMap(slug => { const product = catalog.get(slug); return product ? [product] : []; });
-  const missing = comparison.filter(slug => !catalog.has(slug));
-  return <section aria-label="Demo style comparison">{!persistent && storageNotice}<p className="catalog-result-count">{available.length} of 3 demo styles ready to compare</p>{available.length ? <div className="comparison-grid">{available.map(product => <article className="comparison-item" key={product.slug}><FashionPlaceholder label={`${product.name} illustrative demo artwork`} tone={product.tone}/><h2 className="serif"><Link href={`/products/${product.slug}`}>{product.name}</Link></h2><dl><div><dt>Category</dt><dd>{product.category}</dd></div><div><dt>Colour</dt><dd>{product.color}</dd></div><div><dt>Fabric concept</dt><dd>{product.fabric}</dd></div><div><dt>Proposed sizes</dt><dd>{product.sizes.join(" · ") || "Not specified"}</dd></div><div><dt>Indicative price</dt><dd>{formatPrice(product.price)}</dd></div></dl><p>{product.description}</p><button type="button" onClick={() => compare(product.slug)} aria-label={`Remove ${product.name} from comparison`}>Remove from comparison</button></article>)}</div> : <p className="notice">No styles currently available to compare. Visit the demo catalogue to choose up to three concepts.</p>}{missing.length > 0 && <div className="notice" role="status"><p>{missing.length} comparison selection(s) are no longer in this unpublished preview. They cannot be compared; remove them below to make room for other styles.</p><ul>{missing.map(slug => <li key={slug}><span>{slug}</span> <button type="button" onClick={() => compare(slug)} aria-label={`Remove unavailable style ${slug} from comparison`}>Remove unavailable style</button></li>)}</ul></div>}<p className="notice">Illustrative concepts only. Details, sizes and pricing are unverified; comparison does not reserve stock or enable checkout.</p><Link className="text-link" href="/shop">Browse demo styles ↗</Link></section>;
+
+  return (
+    <section aria-label="Compare styles">
+      <p className="catalog-result-count">{available.length} of 3 styles</p>
+      {available.length ? (
+        <div className="comparison-grid">
+          {available.map(product => (
+            <article className="comparison-item" key={product.slug}>
+              <ProductMedia src={product.image} alt={product.name} tone={product.tone} />
+              <h2 className="serif"><Link href={`/products/${product.slug}`}>{product.name}</Link></h2>
+              <dl>
+                <div><dt>Category</dt><dd>{product.category}</dd></div>
+                <div><dt>Colour</dt><dd>{product.color}</dd></div>
+                <div><dt>Fabric</dt><dd>{product.fabric}</dd></div>
+                <div><dt>Sizes</dt><dd>{product.sizes.join(" · ") || "—"}</dd></div>
+                <div><dt>Price</dt><dd>{formatPrice(product.price)}</dd></div>
+              </dl>
+              <p>{product.description}</p>
+              <button type="button" onClick={() => compare(product.slug)}
+                aria-label={`Remove ${product.name} from comparison`}>Remove</button>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="notice">No styles to compare. <Link href="/shop" className="text-link">Browse the collection ↗</Link></p>
+      )}
+    </section>
+  );
 }

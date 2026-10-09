@@ -1,0 +1,1408 @@
+/* ============================================================
+   VELOURA — premium women's fashion landing page
+   Scoped under .vl-root so it never collides with AURELIA styles.
+   ============================================================ */
+
+.vl-root {
+  /* Color system */
+  --vl-primary: #111111;
+  --vl-secondary: #555555;
+  --vl-body: #3f3f3f;
+  --vl-bg: #ffffff;
+  --vl-cream: #faf5ef;
+  --vl-beige: #f3e8de;
+  --vl-peach: #f8ddd3;
+  --vl-blush: #f7cfc8;
+  --vl-coral: #c85b5b;
+  --vl-sale: #d85c5c;
+  --vl-border: #e8e3de;
+  --vl-gray: #777777;
+  --vl-footer: #0b0b0b;
+
+  --vl-maxw: 1340px;
+  --vl-pad: 48px;
+
+  --vl-font-serif: var(--vl-serif), Georgia, serif;
+  --vl-font-sans: var(--vl-sans), system-ui, -apple-system, sans-serif;
+
+  background: var(--vl-bg);
+  color: var(--vl-body);
+  font-family: var(--vl-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Reset within the Veloura scope */
+.vl-root *,
+.vl-root *::before,
+.vl-root *::after { box-sizing: border-box; }
+.vl-root img { display: block; max-width: 100%; }
+.vl-root a { color: inherit; text-decoration: none; }
+.vl-root button { font: inherit; cursor: pointer; }
+.vl-root :focus-visible { outline: 2px solid var(--vl-coral); outline-offset: 3px; }
+
+.vl-container {
+  width: 100%;
+  max-width: var(--vl-maxw);
+  margin-inline: auto;
+  padding-inline: var(--vl-pad);
+}
+
+.vl-serif { font-family: var(--vl-font-serif); }
+.vl-sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+
+/* Shared section rhythm */
+.vl-section { padding-top: 48px; }
+.vl-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 20px;
+}
+.vl-section-head__title { position: relative; }
+.vl-section-head h2 {
+  font-family: var(--vl-font-serif);
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--vl-primary);
+  margin: 0;
+  line-height: 1.1;
+}
+.vl-section-head__underline {
+  display: block;
+  width: 46px;
+  height: 3px;
+  background: var(--vl-coral);
+  margin-top: 8px;
+  border-radius: 2px;
+}
+.vl-viewall {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vl-primary);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.vl-viewall:hover { color: var(--vl-coral); }
+
+/* Buttons — scoped with .vl-root so `.vl-root a { color: inherit }` (higher
+   specificity) can't override the button text colour on anchor buttons. */
+.vl-root .vl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 44px;
+  padding: 0 22px;
+  background: var(--vl-primary);
+  color: #fff;
+  border: 1px solid var(--vl-primary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+}
+.vl-root .vl-btn:hover { background: var(--vl-coral); border-color: var(--vl-coral); color: #fff; }
+.vl-root .vl-btn--outline {
+  background: transparent;
+  color: var(--vl-primary);
+  border-color: var(--vl-primary);
+}
+.vl-root .vl-btn--outline:hover { background: var(--vl-primary); color: #fff; }
+
+/* ============================================================
+   1. ANNOUNCEMENT BAR
+   ============================================================ */
+.vl-promo {
+  background: var(--vl-blush);
+  color: var(--vl-primary);
+  height: 38px;
+  display: flex;
+  align-items: center;
+}
+.vl-promo__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  max-width: var(--vl-maxw);
+  margin-inline: auto;
+  padding-inline: var(--vl-pad);
+}
+.vl-promo__msgs {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.vl-promo__msg {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.vl-promo__sep { opacity: 0.4; }
+/* The duplicate message set is only used for the seamless mobile marquee. */
+.vl-promo__loop { display: none; }
+.vl-promo__arrow {
+  background: none;
+  border: none;
+  color: var(--vl-primary);
+  display: inline-flex;
+  padding: 4px;
+  opacity: 0.75;
+}
+.vl-promo__arrow:hover { opacity: 1; }
+@keyframes vlPromoScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ============================================================
+   2. HEADER
+   ============================================================ */
+.vl-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--vl-bg);
+  border-bottom: 1px solid var(--vl-border);
+  transition: box-shadow 0.25s;
+}
+.vl-header--scrolled { box-shadow: 0 2px 14px rgba(17, 17, 17, 0.07); }
+.vl-header__row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  min-height: 74px;
+}
+.vl-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--vl-font-serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--vl-primary);
+}
+.vl-logo__icon { color: var(--vl-coral); display: inline-flex; }
+
+.vl-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-left: 8px;
+}
+.vl-nav a {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: var(--vl-primary);
+  position: relative;
+  padding: 4px 0;
+}
+.vl-nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 1.5px;
+  background: var(--vl-coral);
+  transition: width 0.25s;
+}
+.vl-nav a:hover::after { width: 100%; }
+.vl-nav a.vl-nav--sale { color: var(--vl-coral); font-weight: 600; }
+
+.vl-header__actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.vl-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 172px;
+  height: 38px;
+  padding: 0 12px;
+  background: #f4f1ee;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  color: var(--vl-gray);
+  transition: border-color 0.2s, background 0.2s;
+}
+.vl-search:focus-within { border-color: var(--vl-border); background: #fff; }
+.vl-search input {
+  border: none;
+  background: none;
+  outline: none;
+  width: 100%;
+  font-size: 12px;
+  color: var(--vl-primary);
+}
+.vl-search__btn {
+  border: none;
+  background: none;
+  color: var(--vl-gray);
+  display: inline-flex;
+  padding: 0;
+  flex-shrink: 0;
+}
+.vl-search__btn:hover { color: var(--vl-coral); }
+.vl-icon-btn {
+  position: relative;
+  border: none;
+  background: none;
+  color: var(--vl-primary);
+  display: inline-flex;
+  padding: 4px;
+  transition: color 0.2s;
+}
+.vl-icon-btn:hover { color: var(--vl-coral); }
+/* Admin shortcut — only shown to admin/superadmin. */
+.vl-admin-link {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--vl-primary);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vl-primary);
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+.vl-admin-link:hover { background: var(--vl-primary); color: #fff; }
+.vl-cart-badge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--vl-sale);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.vl-menu-toggle { display: none; border: none; background: none; color: var(--vl-primary); padding: 4px; }
+
+/* ── Mobile menu — slim off-canvas side drawer ──────────────────────
+   Slides in from the left over the page (never pushes content down),
+   with a branded header, per-item icons and interactive hover states. */
+.vl-mobile-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 200;
+  width: min(76vw, 300px);
+  max-width: none;              /* override .vl-container centering */
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #fff;
+  box-shadow: 8px 0 40px rgba(17,17,17,0.18);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 0.32s cubic-bezier(0.22,0.61,0.36,1), visibility 0.32s ease;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.vl-mobile-menu.vl-open { transform: translateX(0); visibility: visible; }
+
+/* Branded header */
+.vl-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 14px 20px;
+  border-bottom: 1px solid var(--vl-border);
+  background: linear-gradient(120deg, var(--vl-cream) 0%, #fff 90%);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.vl-drawer__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--vl-font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--vl-primary);
+}
+.vl-drawer__brand .vl-logo__icon { color: var(--vl-coral); }
+.vl-drawer__close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--vl-border);
+  background: #fff;
+  color: var(--vl-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+}
+.vl-drawer__close:hover { background: var(--vl-primary); color: #fff; border-color: var(--vl-primary); transform: translateX(-2px); }
+
+/* Item list */
+.vl-drawer__items { display: flex; flex-direction: column; padding: 8px 0; flex: 1; }
+.vl-drawer__item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 13px 20px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--vl-primary);
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, padding-left 0.18s ease;
+}
+.vl-drawer__item:hover,
+.vl-drawer__item:focus-visible {
+  background: var(--vl-cream);
+  border-left-color: var(--vl-coral);
+  padding-left: 24px;
+  color: var(--vl-primary);
+  outline: none;
+}
+.vl-drawer__icon {
+  display: inline-flex;
+  color: var(--vl-secondary);
+  flex-shrink: 0;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+.vl-drawer__item:hover .vl-drawer__icon { color: var(--vl-coral); transform: scale(1.08); }
+.vl-drawer__label { flex: 1; }
+.vl-drawer__chev { color: var(--vl-border); flex-shrink: 0; transition: transform 0.18s ease, color 0.18s ease; }
+.vl-drawer__item:hover .vl-drawer__chev { color: var(--vl-coral); transform: translateX(3px); }
+/* Sale item accent */
+.vl-drawer__item--sale .vl-drawer__label { color: var(--vl-coral); font-weight: 600; }
+.vl-drawer__item--sale .vl-drawer__icon { color: var(--vl-coral); }
+/* Sign out */
+.vl-drawer__signout {
+  margin-top: 6px;
+  border-top: 1px solid var(--vl-border);
+  color: var(--vl-sale);
+}
+.vl-drawer__signout .vl-drawer__icon { color: var(--vl-sale); }
+.vl-drawer__signout:hover { background: #fdf0f0; border-left-color: var(--vl-sale); }
+.vl-drawer__signout:hover .vl-drawer__icon { color: var(--vl-sale); }
+
+/* Footer tagline */
+.vl-drawer__foot {
+  margin: 0;
+  padding: 16px 20px 22px;
+  border-top: 1px solid var(--vl-border);
+  font-size: 11.5px;
+  letter-spacing: 0.4px;
+  color: var(--vl-gray);
+  font-style: italic;
+}
+
+/* Backdrop behind the drawer */
+.vl-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  background: rgba(17,17,17,0.45);
+  backdrop-filter: blur(1.5px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.vl-menu-backdrop.vl-open { opacity: 1; visibility: visible; }
+
+/* ============================================================
+   3. HERO
+   ============================================================ */
+.vl-hero {
+  position: relative;
+  background: var(--vl-cream);
+  overflow: hidden;
+}
+.vl-hero__slide {
+  display: grid;
+  grid-template-columns: 48% 52%;
+  min-height: 520px;
+}
+
+/* ── Full-bleed photo hero ─────────────────────────────────────────
+   A single edge-to-edge portrait photograph with the text overlaid on a
+   soft gradient scrim. Used when a slide has a real image URL. */
+.vl-hero--photo { background: #efe7de; }
+.vl-hero__full {
+  position: relative;
+  width: 100%;
+  height: clamp(560px, 82vh, 860px);
+  overflow: hidden;
+}
+.vl-hero__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Anchor the crop to the top so the model's head is never cut off. */
+  object-position: 50% 0%;
+  display: block;
+}
+/* Gradient scrim so the text stays readable over the photo. Darkens the
+   left/bottom where the copy sits, keeps the model side clear. */
+.vl-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(20,14,12,0.55) 0%, rgba(20,14,12,0.28) 34%, rgba(20,14,12,0) 62%),
+    linear-gradient(0deg, rgba(20,14,12,0.45) 0%, rgba(20,14,12,0) 40%);
+}
+.vl-hero__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0;
+  /* Align the copy to the site content container, not the raw screen edge, and
+     leave room on the left so the carousel arrow never overlaps the text. */
+  width: 100%;
+  max-width: var(--vl-maxw);
+  margin-inline: auto;
+  padding-left: calc(var(--vl-pad) + 44px);
+  padding-right: var(--vl-pad);
+  color: #fff;
+}
+.vl-hero--photo .vl-hero__eyebrow { color: rgba(255,255,255,0.92); }
+.vl-hero--photo .vl-hero__title { color: #fff; }
+.vl-hero--photo .vl-hero__title .vl-accent { color: #ffd9cf; }
+.vl-hero--photo .vl-hero__desc { color: rgba(255,255,255,0.92); }
+/* Constrain the text column so it stays on the darker left side of the photo. */
+.vl-hero--photo .vl-hero__overlay > * { max-width: 30rem; }
+/* On the photo hero the outline button needs light borders/text. */
+.vl-hero--photo .vl-btn--outline {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border-color: rgba(255,255,255,0.7);
+}
+.vl-hero--photo .vl-btn--outline:hover { background: #fff; color: var(--vl-primary); }
+.vl-hero__content {
+  align-self: center;
+  padding: 40px 56px 40px 0;
+  padding-left: max(calc((100vw - var(--vl-maxw)) / 2 + var(--vl-pad)), var(--vl-pad));
+}
+.vl-hero__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--vl-secondary);
+  margin: 0 0 18px;
+}
+.vl-hero__title {
+  font-family: var(--vl-font-serif);
+  font-size: 64px;
+  font-weight: 600;
+  line-height: 0.98;
+  color: var(--vl-primary);
+  margin: 0 0 20px;
+}
+.vl-hero__title .vl-accent { color: var(--vl-coral); display: block; }
+.vl-hero__desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--vl-secondary);
+  max-width: 380px;
+  margin: 0 0 28px;
+}
+.vl-hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.vl-hero__media {
+  position: relative;
+  min-height: 520px;
+}
+.vl-hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  position: absolute;
+  inset: 0;
+}
+.vl-hero__badge {
+  position: absolute;
+  top: 34px;
+  right: 34px;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  background: var(--vl-blush);
+  color: var(--vl-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 3;
+  box-shadow: 0 6px 20px rgba(200, 91, 91, 0.18);
+}
+.vl-hero__badge small { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+.vl-hero__badge b { font-family: var(--vl-font-serif); font-size: 30px; line-height: 1; color: var(--vl-coral); }
+.vl-hero__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--vl-border);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--vl-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.vl-hero__arrow:hover { background: #fff; }
+.vl-hero__arrow--prev { left: 18px; }
+.vl-hero__arrow--next { right: 18px; }
+.vl-hero__dots {
+  position: absolute;
+  bottom: 18px;
+  left: max(calc((100vw - var(--vl-maxw)) / 2 + var(--vl-pad)), var(--vl-pad));
+  display: flex;
+  gap: 8px;
+  z-index: 4;
+}
+.vl-hero__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: var(--vl-beige);
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+.vl-hero__dot--active { background: var(--vl-coral); transform: scale(1.15); }
+
+/* ============================================================
+   8. SHOP BY CATEGORY
+   ============================================================ */
+.vl-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+/* Full-image category tile: the photo fills the whole card, the label sits on
+   top over a soft gradient scrim (no more split text/photo halves). */
+.vl-cat-card {
+  position: relative;
+  display: block;
+  background: var(--vl-cream);
+  border: 1px solid var(--vl-border);
+  border-radius: 4px;
+  overflow: hidden;
+  /* Portrait tile — tall enough to show the model without cropping the head. */
+  aspect-ratio: 3 / 4;
+  transition: box-shadow 0.25s, transform 0.25s;
+}
+.vl-cat-card:hover { box-shadow: 0 8px 24px rgba(17, 17, 17, 0.08); }
+/* Media layer fills the card behind the text. */
+.vl-cat-card__media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.vl-cat-card__media img,
+.vl-cat-card__media svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Anchor to the very top so the model's head is never cropped. */
+  object-position: 50% 0%;
+  transition: transform 0.4s ease;
+}
+.vl-cat-card:hover .vl-cat-card__media img { transform: scale(1.05); }
+/* Scrim for text legibility over the photo. */
+.vl-cat-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(20,14,12,0.62) 0%, rgba(20,14,12,0.18) 42%, rgba(20,14,12,0) 68%);
+  z-index: 1;
+  pointer-events: none;
+}
+/* Text overlay, anchored to the bottom. */
+.vl-cat-card__body {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.vl-cat-card__body h3 {
+  font-family: var(--vl-font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 5px;
+}
+.vl-cat-card__body p { font-size: 12px; line-height: 1.5; color: rgba(255,255,255,0.88); margin: 0 0 12px; }
+.vl-cat-card__cta {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.vl-cat-card:hover .vl-cat-card__cta { color: var(--vl-peach); }
+
+/* ============================================================
+   9/13. PRODUCT GRID + CARD
+   ============================================================ */
+.vl-prod-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+}
+.vl-card { position: relative; }
+.vl-card__media {
+  position: relative;
+  aspect-ratio: 2 / 3;   /* Taller portrait — full-length model always fits */
+  overflow: hidden;
+  background: #f5f0ea;
+  border-radius: 3px;
+}
+.vl-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;       /* Never crop — show the full outfit */
+  object-position: center top; /* Anchor to top so head is never cut */
+  background: #f5f0ea;
+  transition: opacity 0.3s ease;
+}
+.vl-card:hover .vl-card__media img { opacity: .92; }
+/* Whole-card link — clicking anywhere opens the product page. */
+.vl-card__link { display: block; color: inherit; }
+.vl-card__link:focus-visible { outline: 2px solid var(--vl-coral); outline-offset: 3px; }
+.vl-card__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--vl-sale);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+  z-index: 2;
+}
+.vl-wish {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--vl-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s;
+}
+.vl-wish:hover { background: #fff; }
+.vl-wish--active { color: var(--vl-coral); }
+
+.vl-card__info { padding-top: 10px; }
+.vl-card__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vl-primary);
+  margin: 0 0 5px;
+  line-height: 1.35;
+}
+.vl-card__price { display: flex; align-items: baseline; gap: 7px; margin-bottom: 5px; }
+.vl-card__price b { font-size: 14px; font-weight: 600; color: var(--vl-primary); }
+.vl-card__price del { font-size: 12px; color: var(--vl-gray); }
+.vl-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--vl-secondary);
+  margin-bottom: 7px;
+}
+.vl-stars { display: inline-flex; color: #e8b84b; }
+.vl-stars svg { width: 12px; height: 12px; }
+.vl-swatches { display: flex; gap: 5px; }
+.vl-swatch {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid var(--vl-border);
+  flex-shrink: 0;
+}
+.vl-card__colour {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vl-card__colour-name {
+  font-size: 11px;
+  color: var(--vl-secondary);
+}
+
+/* ============================================================
+   11. MID SEASON SALE BANNER
+   ============================================================ */
+.vl-sale {
+  /* Full-width photo banner: the image fills the whole strip, the sale message
+     is centred on top over a soft scrim (no split columns). */
+  position: relative;
+  min-height: clamp(300px, 34vw, 420px);
+  background: var(--vl-blush);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.vl-sale__media { position: absolute; inset: 0; overflow: hidden; }
+.vl-sale__media img,
+.vl-sale__media svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Scrim so the centred text stays readable over the photo. */
+.vl-sale::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(20,14,12,0.5) 0%, rgba(20,14,12,0.3) 55%, rgba(20,14,12,0.15) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+.vl-sale__center {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+.vl-sale__eyebrow { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.9); margin: 0 0 10px; }
+.vl-sale__big {
+  font-family: var(--vl-font-serif);
+  font-size: clamp(40px, 6vw, 60px);
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 8px;
+  line-height: 1;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.25);
+}
+.vl-sale__big em { color: #ffd9cf; font-style: normal; font-size: 1.4em; }
+.vl-sale__sub { font-size: 13px; color: rgba(255,255,255,0.9); margin: 0 0 22px; }
+/* The old decorative right panel is not needed on the full-image banner. */
+.vl-sale__deco { display: none; }
+
+/* ============================================================
+   12. SHOP BY OCCASION
+   ============================================================ */
+.vl-occ-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+/* Full-image occasion tile — same layout as the category tiles: the photo
+   fills the whole card, the label sits on top over a soft gradient scrim. */
+.vl-occ-card {
+  position: relative;
+  display: block;
+  background: var(--vl-cream);
+  border: 1px solid var(--vl-border);
+  border-radius: 4px;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  transition: box-shadow 0.25s, transform 0.25s;
+}
+.vl-occ-card:hover { box-shadow: 0 8px 24px rgba(17, 17, 17, 0.08); }
+.vl-occ-card__media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.vl-occ-card__media img,
+.vl-occ-card__media svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0%;
+  transition: transform 0.4s ease;
+}
+.vl-occ-card:hover .vl-occ-card__media img { transform: scale(1.05); }
+.vl-occ-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(20,14,12,0.62) 0%, rgba(20,14,12,0.18) 42%, rgba(20,14,12,0) 68%);
+  z-index: 1;
+  pointer-events: none;
+}
+.vl-occ-card__body {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.vl-occ-card__body h3 {
+  font-family: var(--vl-font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 5px;
+}
+.vl-occ-card__body p { font-size: 12px; line-height: 1.5; color: rgba(255,255,255,0.88); margin: 0 0 12px; }
+.vl-occ-card__cta {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.vl-occ-card:hover .vl-occ-card__cta { color: var(--vl-peach); }
+
+/* ============================================================
+   14. EDITORIAL / BRAND STORY
+   ============================================================ */
+.vl-editorial {
+  /* Full-image editorial banner: the photo fills the whole block, the copy sits
+     on top (right side) over a soft gradient scrim — no split columns. */
+  position: relative;
+  min-height: clamp(380px, 42vw, 560px);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--vl-cream);
+  display: flex;
+}
+.vl-editorial__media { position: absolute; inset: 0; overflow: hidden; }
+.vl-editorial__media img,
+.vl-editorial__media svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Scrim: darkens the right side where the text lives, keeps the model side clear. */
+.vl-editorial::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(270deg, rgba(20,14,12,0.6) 0%, rgba(20,14,12,0.32) 34%, rgba(20,14,12,0) 62%);
+  z-index: 1;
+  pointer-events: none;
+}
+.vl-editorial__body {
+  position: relative;
+  z-index: 2;
+  margin-left: auto;             /* push the copy to the right */
+  align-self: center;
+  max-width: 42%;
+  padding: 48px clamp(28px, 5vw, 64px);
+  color: #fff;
+}
+.vl-editorial__eyebrow { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,255,255,0.85); margin: 0 0 14px; }
+.vl-editorial__body h2 {
+  font-family: var(--vl-font-serif);
+  font-size: clamp(34px, 4vw, 46px);
+  font-weight: 600;
+  line-height: 1.05;
+  color: #fff;
+  margin: 0 0 18px;
+}
+.vl-editorial__body p { font-size: 14px; line-height: 1.75; color: rgba(255,255,255,0.9); max-width: 30rem; margin: 0 0 26px; }
+/* On desktop the heading lives in the body overlay, so the image caption is hidden. */
+.vl-editorial__caption { display: none; }
+
+/* ============================================================
+   15. CUSTOMER REVIEWS
+   ============================================================ */
+.vl-reviews-summary {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 40px;
+  padding-bottom: 28px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--vl-border);
+}
+.vl-reviews-score { display: flex; flex-direction: column; gap: 4px; }
+.vl-reviews-label { font-size: 12px; color: var(--vl-secondary); }
+.vl-reviews-avg { display: flex; align-items: baseline; gap: 6px; }
+.vl-reviews-avg strong { font-size: 40px; font-weight: 700; color: var(--vl-primary); line-height: 1; }
+.vl-reviews-outof { font-size: 14px; color: var(--vl-gray); }
+.vl-reviews-score .vl-stars { color: #e8b84b; }
+.vl-reviews-count { font-size: 12px; color: var(--vl-secondary); }
+
+.vl-reviews-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-width: 340px; }
+.vl-reviews-bars li { display: flex; align-items: center; gap: 10px; }
+.vl-reviews-bar-label { font-size: 12px; color: var(--vl-secondary); width: 30px; display: inline-flex; align-items: center; gap: 3px; }
+.vl-reviews-star { color: #e8b84b; }
+.vl-reviews-bar-track { flex: 1; height: 8px; background: #ececec; border-radius: 999px; overflow: hidden; }
+.vl-reviews-bar-fill { display: block; height: 100%; background: #f0b429; border-radius: 999px; transition: width .4s ease; }
+.vl-reviews-bar-n { font-size: 12px; color: var(--vl-secondary); width: 16px; text-align: right; }
+.vl-reviews-cta { justify-self: end; }
+
+.vl-reviews-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.vl-review-card {
+  background: #faf8f5;
+  border: 1px solid var(--vl-border);
+  border-radius: 4px;
+  padding: 18px 18px 20px;
+}
+.vl-review-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.vl-review-stars { color: #e8b84b; display: inline-flex; }
+.vl-review-date { font-size: 11px; color: var(--vl-gray); }
+.vl-review-author { font-size: 13px; font-weight: 600; color: var(--vl-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+.vl-review-title { font-size: 13px; font-weight: 600; color: var(--vl-primary); margin: 0 0 5px; }
+.vl-review-body { font-size: 12.5px; line-height: 1.6; color: var(--vl-body); margin: 0; }
+
+/* ============================================================
+   16. NEWSLETTER
+   ============================================================ */
+.vl-news {
+  background: var(--vl-peach);
+  margin-top: 52px;
+}
+.vl-news__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 30px 0;
+  min-height: 130px;
+}
+.vl-news__copy { display: flex; align-items: center; gap: 16px; }
+.vl-news__leaf { color: var(--vl-coral); flex-shrink: 0; opacity: 0.6; }
+.vl-news__copy h2 { font-family: var(--vl-font-serif); font-size: 26px; font-weight: 600; color: var(--vl-primary); margin: 0 0 4px; }
+.vl-news__copy p { font-size: 12.5px; color: var(--vl-secondary); margin: 0; max-width: 30rem; }
+.vl-news__form { display: flex; width: 500px; max-width: 100%; }
+.vl-news__form input {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 0 16px;
+  border: 1px solid var(--vl-border);
+  border-right: none;
+  background: #fff;
+  font-size: 13px;
+  color: var(--vl-primary);
+  outline: none;
+}
+.vl-news__form input:focus { border-color: var(--vl-coral); }
+.vl-news__form button { height: 46px; border-radius: 0; white-space: nowrap; }
+.vl-news__done { font-size: 13px; color: var(--vl-primary); font-weight: 500; }
+
+/* ============================================================
+   17. FOOTER
+   ============================================================ */
+.vl-footer { background: var(--vl-footer); color: #cfcac4; margin-top: 0; }
+.vl-footer__top {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr 1.1fr;
+  gap: 28px;
+  padding: 52px 0 40px;
+}
+.vl-footer__brand .vl-logo { color: #fff; margin-bottom: 14px; }
+.vl-footer__desc { font-size: 12.5px; line-height: 1.7; max-width: 22rem; margin: 0 0 18px; }
+.vl-footer__social { display: flex; gap: 12px; }
+.vl-footer__social a {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #333;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #cfcac4;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.vl-footer__social a:hover { background: var(--vl-coral); color: #fff; border-color: var(--vl-coral); }
+.vl-footer h4 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0 0 16px;
+}
+.vl-footer__col a { display: block; font-size: 12.5px; margin-bottom: 11px; transition: color 0.2s; }
+.vl-footer__col a:hover { color: #fff; }
+.vl-footer__accordion-btn { display: none; }
+.vl-pay { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.vl-pay span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: #fff;
+  color: #111;
+  padding: 5px 9px;
+  border-radius: 3px;
+}
+.vl-trust { display: flex; flex-direction: column; gap: 8px; }
+.vl-trust span { font-size: 11.5px; display: flex; align-items: center; gap: 7px; }
+.vl-trust svg { color: var(--vl-coral); }
+.vl-footer__bottom {
+  border-top: 1px solid #262626;
+  padding: 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11.5px;
+}
+.vl-footer__bottom-links { display: flex; gap: 20px; }
+.vl-footer__bottom-links a:hover { color: #fff; }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes vlFadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.vl-reveal { animation: vlFadeUp 0.5s ease both; }
+
+/* ============================================================
+   RESPONSIVE — TABLET (768–1199)
+   ============================================================ */
+@media (max-width: 1199px) {
+  .vl-root { --vl-pad: 32px; }
+  .vl-nav { gap: 18px; }
+  .vl-nav a { font-size: 12px; }
+  .vl-search { width: 140px; }
+  .vl-hero__title { font-size: 52px; }
+  .vl-prod-grid { grid-template-columns: repeat(3, 1fr); }
+  .vl-cat-grid { grid-template-columns: repeat(2, 1fr); }
+  .vl-occ-grid { grid-template-columns: repeat(2, 1fr); }
+  .vl-footer__top { grid-template-columns: 1fr 1fr 1fr; }
+  .vl-reviews-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE (≤767)
+   ============================================================ */
+@media (max-width: 767px) {
+  .vl-root { --vl-pad: 18px; }
+  .vl-section { padding-top: 36px; }
+
+  /* Promo */
+  /* Announcement bar becomes an infinite auto-scrolling marquee. */
+  .vl-promo { height: 34px; overflow: hidden; }
+  .vl-promo__inner { gap: 0; padding-inline: 0; justify-content: flex-start; overflow: hidden; }
+  .vl-promo__arrow { display: none; }               /* no room for arrows on mobile */
+  /* The track = original set + an identical duplicate. Animating it by exactly
+     -50% and looping infinitely gives a seamless, never-ending scroll.
+     display:contents lets the duplicate's spans join the flex track directly so
+     the two halves are equal (required for the -50% loop to be seamless). */
+  .vl-promo__loop { display: contents; }
+  .vl-promo__msgs {
+    display: flex;
+    flex-wrap: nowrap;
+    width: max-content;          /* size to content so -50% is one full set */
+    justify-content: flex-start;
+    gap: 0;
+    overflow: visible;
+    animation: vlPromoScroll 20s linear infinite;
+    will-change: transform;
+  }
+  .vl-promo__msg { font-size: 10px; }
+  .vl-promo__msg, .vl-promo__sep { flex: 0 0 auto; padding: 0 14px; white-space: nowrap; }
+
+  /* Header */
+  .vl-header__row { min-height: 60px; gap: 10px; }
+  /* Hide the inline search, primary nav, and the desktop Admin pill on mobile —
+     the drawer carries navigation + the Admin Dashboard entry for admins. */
+  .vl-nav, .vl-search, .vl-admin-link { display: none; }
+  .vl-menu-toggle { display: inline-flex; }
+  .vl-logo { font-size: 22px; margin-inline: auto; }
+  .vl-header__actions { margin-left: 0; gap: 10px; }
+  .vl-mobile-menu.vl-open { transform: translateX(0); }
+
+  /* Hero */
+  .vl-hero__slide { grid-template-columns: 1fr; min-height: 0; }
+  .vl-hero__media { min-height: 340px; order: 1; }
+  .vl-hero__content {
+    order: 2;
+    padding: 30px var(--vl-pad) 46px;
+    text-align: left;
+  }
+  .vl-hero__title { font-size: 42px; }
+  .vl-hero__desc { max-width: none; }
+  /* Moderate, tappable hero buttons (not thin). */
+  .vl-hero__actions { gap: 10px; }
+  .vl-hero__actions .vl-btn {
+    flex: 1;
+    height: 50px;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    padding: 0 20px;
+  }
+  .vl-hero__badge { width: 78px; height: 78px; top: 16px; right: 16px; }
+  .vl-hero__badge b { font-size: 22px; }
+  .vl-hero__dots { position: static; margin: 18px var(--vl-pad) 0; }
+  .vl-hero__arrow { display: none; }
+
+  /* Full-bleed photo hero on mobile: keep it edge-to-edge with an overlay,
+     a stronger bottom scrim, and the text/dots anchored to the bottom. */
+  .vl-hero__full { height: clamp(460px, 78vh, 620px); }
+  /* Hero models sit on the RIGHT of the photo, so bias the mobile crop right
+     (and slightly down for the face) — otherwise the tall mobile frame cuts
+     the model out and only shows the background wall. */
+  .vl-hero--photo .vl-hero__bg { object-position: 72% 15%; }
+  .vl-hero--photo .vl-hero__scrim {
+    background:
+      linear-gradient(0deg, rgba(20,14,12,0.62) 0%, rgba(20,14,12,0.15) 44%, rgba(20,14,12,0) 70%);
+  }
+  .vl-hero--photo .vl-hero__overlay {
+    justify-content: flex-end;
+    padding-bottom: 44px;
+    /* Arrows are hidden on mobile — drop the extra left indent so the copy
+       aligns to the normal page edge. */
+    padding-left: var(--vl-pad);
+    padding-right: var(--vl-pad);
+  }
+  .vl-hero--photo .vl-hero__overlay > * { max-width: none; }
+  .vl-hero--photo .vl-hero__dots { position: absolute; margin: 0; bottom: 18px; left: var(--vl-pad); }
+
+  /* Section heads */
+  .vl-section-head h2 { font-size: 26px; }
+
+  /* Category — 2 up, shorter tiles so they don't dominate the screen */
+  .vl-cat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .vl-cat-card { aspect-ratio: 3 / 3.6; }
+  .vl-cat-card__body { padding: 14px 12px; }
+  .vl-cat-card__body h3 { font-size: 17px; }
+  .vl-cat-card__body p { font-size: 11px; margin-bottom: 8px; }
+
+  /* Products — 2 columns */
+  .vl-prod-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+  /* Sale banner — full-image, shorter on mobile */
+  .vl-sale { min-height: 280px; }
+
+  /* Occasion — full-image tiles, 2 up, matching the category cards. */
+  .vl-occ-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .vl-occ-card { aspect-ratio: 3 / 3.6; }
+  .vl-occ-card__body { padding: 14px 12px; }
+  .vl-occ-card__body h3 { font-size: 17px; }
+  .vl-occ-card__body p { font-size: 11px; margin-bottom: 8px; }
+
+  /* Editorial — image on top with the eyebrow + heading overlaid on the right;
+     the paragraph + button sit on a cream band below. */
+  .vl-editorial { min-height: 0; display: flex; flex-direction: column; }
+  .vl-editorial__media { position: relative; inset: auto; height: 340px; display: flex; }
+  /* The two models sit on the LEFT of the photo. Anchor the crop to the left
+     edge so they stay fully in frame (not sliced off) on the narrow mobile
+     view; the caption sits over the empty wall on the right. */
+  .vl-editorial__media img { object-position: 0% 18%; }
+  .vl-editorial::after { display: none; }
+
+  /* Heading overlay on the image (right side, bottom) with a soft scrim behind it. */
+  .vl-editorial__caption {
+    display: block;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    padding: 40px var(--vl-pad) 18px;
+    text-align: right;
+    color: #fff;
+    background: linear-gradient(0deg, rgba(20,14,12,0.62) 0%, rgba(20,14,12,0.15) 55%, rgba(20,14,12,0) 100%);
+  }
+  .vl-editorial__caption .vl-editorial__eyebrow { color: rgba(255,255,255,0.9); margin: 0 0 8px; }
+  .vl-editorial__caption h2 {
+    font-family: var(--vl-font-serif);
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.05;
+    color: #fff;
+    margin: 0;
+  }
+
+  /* Body below — hide its duplicated heading, keep paragraph + button. */
+  .vl-editorial__body {
+    position: static;
+    margin: 0;
+    max-width: none;
+    background: var(--vl-cream);
+    color: var(--vl-primary);
+    padding: 22px var(--vl-pad) 28px;
+  }
+  .vl-editorial__eyebrow--body,
+  .vl-editorial__title--body { display: none; }
+  .vl-editorial__body p { color: var(--vl-secondary); margin: 0 0 20px; }
+
+  /* Reviews — stack */
+  .vl-reviews-summary { grid-template-columns: 1fr; gap: 20px; }
+  .vl-reviews-cta { justify-self: stretch; }
+  .vl-reviews-cta .vl-btn { width: 100%; }
+  .vl-reviews-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Newsletter — stacked, centered card. Copy on top, then a full-width email
+     field with the Subscribe button directly beneath it. Everything stays
+     inside the page padding so nothing bleeds to the screen edge. */
+  .vl-news__inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 18px;
+    padding: 34px var(--vl-pad);
+  }
+  .vl-news__copy { flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+  .vl-news__copy > div { max-width: 30rem; }
+  .vl-news__copy h2 { font-size: 24px; }
+  .vl-news__copy p { font-size: 12.5px; }
+  .vl-news__form {
+    width: 100%;
+    max-width: 380px;
+    flex-direction: column;
+    gap: 10px;
+  }
+  /* Input and button share the exact same box so they line up edge-to-edge.
+     border-box keeps the input's border+padding from making it wider than
+     the button. */
+  /* Input and button MUST be identical boxes. Force display:block + full width
+     with border-box so the input's border/padding can't shrink it relative to
+     the button. Higher specificity (.vl-root) guarantees this wins over the
+     base desktop input rule. */
+  .vl-root .vl-news__form input,
+  .vl-root .vl-news__form button {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: 48px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    margin: 0;
+    flex: none;
+  }
+  .vl-root .vl-news__form input {
+    border: 1px solid var(--vl-border);
+    padding: 0 16px;
+    text-align: center;
+  }
+
+  /* Footer — accordions */
+  .vl-footer__top { grid-template-columns: 1fr; gap: 0; padding: 40px 0 24px; }
+  .vl-footer__brand { margin-bottom: 24px; }
+  .vl-footer__col { border-top: 1px solid #262626; }
+  .vl-footer__accordion-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: none;
+    border: none;
+    color: #fff;
+    padding: 16px 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+  }
+  .vl-footer__col h4 { display: none; }
+  .vl-footer__col-links { display: none; padding-bottom: 12px; }
+  .vl-footer__col-links.vl-open { display: block; }
+
+  /* The payments column has no accordion — keep its heading + content visible
+     and give it comfortable spacing so it doesn't look detached. */
+  .vl-footer__pay-col { border-top: 1px solid #262626; padding: 18px 0 4px; }
+  .vl-footer__pay-col h4 { display: block; margin-bottom: 12px; }
+  .vl-footer__pay-col .vl-footer__accordion-btn { display: none; }
+
+  .vl-footer__bottom { flex-direction: column; text-align: center; gap: 8px; padding: 20px 0; }
+  .vl-footer__bottom-links { justify-content: center; }
+}
+
+/* ============================================================
+   RESPONSIVE — SMALL PHONES (≤480)
+   ============================================================ */
+@media (max-width: 480px) {
+  .vl-root { --vl-pad: 14px; }
+  /* Hero: smaller headline + full-width stacked buttons, moderate height */
+  .vl-hero__title { font-size: 34px; }
+  .vl-hero__desc { font-size: 13px; }
+  .vl-hero__actions { flex-direction: column; align-items: stretch; gap: 10px; }
+  .vl-hero__actions .vl-btn { width: 100%; height: 52px; font-size: 12.5px; }
+  .vl-hero__full { height: clamp(420px, 82vh, 560px); }
+
+  /* Section headings */
+  .vl-section-head h2 { font-size: 22px; }
+
+  /* Category — keep 2-up (a single full-width portrait tile is too tall).
+     Slightly shorter tiles for small phones. */
+  .vl-cat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .vl-cat-card { aspect-ratio: 3 / 3.8; }
+  .vl-cat-card__body h3 { font-size: 15px; }
+  .vl-cat-card__body p { display: none; } /* hide blurb on tiny screens to keep it clean */
+
+  /* Occasion — keep 2-up, matching category tiles */
+  .vl-occ-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .vl-occ-card { aspect-ratio: 3 / 3.8; }
+  .vl-occ-card__body h3 { font-size: 15px; }
+  .vl-occ-card__body p { display: none; }
+
+  .vl-reviews-grid { grid-template-columns: 1fr; }
+
+  /* Sale a touch shorter; editorial image slightly shorter (text band below) */
+  .vl-sale { min-height: 240px; }
+  .vl-editorial__media { height: 300px; }
+  .vl-editorial__caption h2 { font-size: 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vl-root *, .vl-root *::before, .vl-root *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

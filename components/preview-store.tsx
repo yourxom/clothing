@@ -4,7 +4,7 @@ import { addToBag, emptyPreviewList, parsePreviewList, serializePreviewList, set
 
 const KEY = "aurelia-preview-list-v1";
 const COMPARE_KEY = "aurelia-preview-compare-v1";
-type Store = { ready: boolean; persistent: boolean; state: PreviewList; comparison: string[]; compare: (slug: string) => void; save: (slug: string) => void; add: (slug: string, size: string) => void; quantity: (slug: string, size: string, count: number) => void };
+type Store = { ready: boolean; persistent: boolean; state: PreviewList; comparison: string[]; compare: (slug: string) => void; save: (slug: string) => void; add: (slug: string, size: string, color?: string) => void; quantity: (slug: string, size: string, color: string, count: number) => void; clearBag: () => void };
 const PreviewContext = createContext<Store | null>(null);
 export function PreviewStore({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PreviewList>(emptyPreviewList);
@@ -30,8 +30,9 @@ export function PreviewStore({ children }: { children: ReactNode }) {
     ready, persistent, state, comparison,
     compare: slug => { if (ready) setComparison(current => toggleComparison(current, slug)); },
     save: slug => { if (ready) setState(current => toggleWishlist(current, slug)); },
-    add: (slug, size) => { if (ready) setState(current => addToBag(current, slug, size)); },
-    quantity: (slug, size, count) => { if (ready) setState(current => setBagQuantity(current, slug, size, count)); },
+    add: (slug, size, color = "") => { if (ready) setState(current => addToBag(current, slug, size, color)); },
+    quantity: (slug, size, color, count) => { if (ready) setState(current => setBagQuantity(current, slug, size, color, count)); },
+    clearBag: () => { if (ready) setState(current => ({ ...current, bag: [] })); },
   };
   return <PreviewContext.Provider value={value}>{children}</PreviewContext.Provider>;
 }

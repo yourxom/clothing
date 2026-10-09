@@ -1,11 +1,103 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CatalogCard } from "@/components/catalog-card";
 import { SearchExperience } from "@/components/search-experience";
-import { filterPreviewProducts } from "@/lib/catalog-filters";
 import { getPreviewProducts } from "@/lib/catalog-reader";
+import { filterPreviewProducts } from "@/lib/catalog-filters";
+import { categories } from "@/lib/catalog";
+
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Search the edit", description: "Search the original AURELIA demo catalogue by style, colour and fabric." };
+
+export const metadata: Metadata = {
+  title: "Search",
+  description: "Search the AURELIA collection by style name, colour, or fabric.",
+};
+
 type Props = { searchParams: Promise<{ q?: string | string[] }> };
-export default async function SearchPage({ searchParams }: Props) { const params = await searchParams; const query = (typeof params.q === "string" ? params.q : "").slice(0, 100); const products = await getPreviewProducts(); const matches = query.trim() ? filterPreviewProducts(products, { query }) : [];
-  return <main id="main-content" className="container shop-page"><header className="shop-intro"><span className="eyebrow">AURELIA / Preview discovery</span><h1 className="serif">Find your next idea.</h1><p>Search original demo concepts. These are not verified products or available for purchase.</p></header><SearchExperience products={products} initialQuery={query}/>{query.trim() ? <><p className="catalog-result-count" role="status">{matches.length} {matches.length === 1 ? "style" : "styles"} match “{query.trim()}”</p>{matches.length ? <div className="catalog-grid">{matches.map(product => <CatalogCard product={product} key={product.slug}/>)}</div> : <p className="notice">No concepts match this search. Try a colour, fabric or a different name.</p>}</> : <p className="notice">Enter a name, colour or fabric to explore the preview edit.</p>}</main>;
+const first = (v: string | string[] | undefined) => (typeof v === "string" ? v : "");
+
+export default async function SearchPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const query = first(params.q).slice(0, 100).trim();
+
+  const products = await getPreviewProducts();
+  const results = query
+    ? filterPreviewProducts(products, { query })
+    : [];
+
+  // Build suggestions from category names when no query
+  const suggestions = categories.slice(0, 6);
+
+  return (
+    <main id="main-content" className="container shop-page">
+      <div className="shop-intro">
+        <span className="eyebrow">Search the collection</span>
+        <h1 className="serif">Find your style.</h1>
+        <p>Search by name, colour, or fabric across {products.length} styles.</p>
+      </div>
+
+      {/* Instant search with live suggestions */}
+      <SearchExperience products={products} initialQuery={query} />
+
+      {/* Quick suggestions when no query */}
+      {!query && (
+        <div className="search-suggestions" style={{ marginTop: "1rem" }}>
+          <p>Popular searches:</p>
+          <ul>
+            {["Kurtas", "Sarees", "Earth Rose", "Cotton blend", "Festive Lehenga", "Olive"].map(term => (
+              <li key={term}>
+                <Link href={`/search?q=${encodeURIComponent(term)}`}>{term}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Results */}
+      {query && (
+        <>
+          <p className="catalog-result-count" role="status">
+            {results.length === 0
+              ? `No results for "${query}"`
+              : `${results.length} result${results.length === 1 ? "" : "s"} for "${query}"`}
+          </p>
+
+          {results.length > 0 ? (
+            <div className="catalog-grid">
+              {results.map(product => (
+                <CatalogCard key={product.slug} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="search-no-results">
+              <p>Try a different spelling, or browse by category:</p>
+              <nav className="catalog-category-nav" aria-label="Browse categories">
+                {suggestions.map(cat => (
+                  <Link key={cat.slug} href={`/collections/${cat.slug}`}>
+                    {cat.name} <span aria-hidden="true">↗</span>
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          )}
+        </>
+      )}
+
+      {!query && (
+        <section>
+          <div className="catalog-heading">
+            <span className="eyebrow">Browse by category</span>
+            <h2 className="serif">Explore the collection</h2>
+          </div>
+          <nav className="catalog-category-nav" aria-label="Browse categories">
+            {categories.map(cat => (
+              <Link key={cat.slug} href={`/collections/${cat.slug}`}>
+                {cat.name} <span aria-hidden="true">↗</span>
+              </Link>
+            ))}
+          </nav>
+        </section>
+      )}
+    </main>
+  );
 }
